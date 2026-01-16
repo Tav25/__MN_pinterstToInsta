@@ -8,6 +8,9 @@
 // @match        https://www.pinterest.com/*
 // @run-at       document-start
 // @grant        none33
+// @updateURL    https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
+// @downloadURL  https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
+
 // ==/UserScript==
 
 (function () {
