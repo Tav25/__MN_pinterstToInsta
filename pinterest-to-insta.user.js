@@ -17,9 +17,7 @@
   'use strict';
 
   // ---------- утилиты ----------
-  const seen = new Set();
-  const pinLinks = new Map(); // pinKey -> url
-  const cmfvUrls = new Set();
+  
 
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
