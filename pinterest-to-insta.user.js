@@ -108,7 +108,9 @@
           Автокопирование
         </label>
       </div>
-      <textarea id="pvlh-textarea" readonly></textarea>
+      <div id="pvlh-list-wrap">
+        <ul id="pvlh-list"></ul>
+      </div>
       <div id="pvlh-actions">
         <button id="pvlh-copy" type="button">Copy all</button>
         <button id="pvlh-export" type="button">Export .txt</button>
@@ -121,19 +123,22 @@
     css.textContent = `
       #pvlh-panel {
         position: fixed;
-        right: 12px;
-        top: 12px;
-        width: 320px;
+        right: 0;
+        top: 0;
+        width: 20vw;
+        min-width: 240px;
+        max-width: 420px;
+        height: 100vh;
         z-index: 99999;
         background: #0d3b66;
         color: #faf0ca;
-        border-radius: 10px;
+        border-radius: 10px 0 0 10px;
         box-shadow: 0 6px 18px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        padding: 12px;
+        gap: 10px;
+        padding: 12px 12px 16px;
       }
       #pvlh-header {
         display: flex;
@@ -147,18 +152,35 @@
         align-items: center;
         font-weight: 500;
       }
-      #pvlh-textarea {
-        width: 100%;
-        min-height: 140px;
-        max-height: 35vh;
-        resize: vertical;
+      #pvlh-list-wrap {
+        flex: 1;
+        background: #082946;
         border-radius: 8px;
         border: 1px solid rgba(255,255,255,.2);
-        background: #082946;
-        color: #faf0ca;
+        overflow: auto;
         padding: 8px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      #pvlh-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         font-size: 11px;
+      }
+      #pvlh-list li {
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.06);
+        word-break: break-all;
+      }
+      #pvlh-list a {
+        color: #faf0ca;
+        text-decoration: none;
+      }
+      #pvlh-list a:hover {
+        text-decoration: underline;
       }
       #pvlh-actions {
         display: grid;
@@ -241,10 +263,21 @@
     const panel = document.getElementById('pvlh-panel');
     if (!panel) return;
     const queue = loadQueue();
-    const textarea = panel.querySelector('#pvlh-textarea');
+    const list = panel.querySelector('#pvlh-list');
     const count = panel.querySelector('#pvlh-count');
-    textarea.value = queue.map((item) => item.url).join('\n');
     count.textContent = String(queue.length);
+    if (!list) return;
+    list.innerHTML = '';
+    queue.forEach((item) => {
+      const li = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = item.url;
+      link.textContent = item.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      li.appendChild(link);
+      list.appendChild(li);
+    });
   }
 
   function addLinkToQueue(entry) {
@@ -280,9 +313,8 @@
   }
 
   function copyAllLinks() {
-    const textarea = document.getElementById('pvlh-textarea');
-    if (!textarea) return;
-    const value = textarea.value;
+    const queue = loadQueue();
+    const value = queue.map((item) => item.url).join('\n');
     if (typeof GM_setClipboard === 'function') {
       GM_setClipboard(value);
       showToast('Скопировано');
@@ -295,9 +327,8 @@
   }
 
   function exportLinks() {
-    const textarea = document.getElementById('pvlh-textarea');
-    if (!textarea) return;
-    const blob = new Blob([textarea.value], { type: 'text/plain' });
+    const queue = loadQueue();
+    const blob = new Blob([queue.map((item) => item.url).join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
