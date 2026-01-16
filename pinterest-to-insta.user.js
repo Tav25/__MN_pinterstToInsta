@@ -121,6 +121,10 @@
     `;
     const css = document.createElement('style');
     css.textContent = `
+      body {
+        padding-right: 20vw;
+        box-sizing: border-box;
+      }
       #pvlh-panel {
         position: fixed;
         right: 0;
