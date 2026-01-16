@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pinterest CMFV link helper
 // @namespace    https://your.namespace.example
-// @version      0.3
+// @version      0.4
 // @description  Показывает ссылку на .cmfv под пином и собирает все найденные .cmfv-URL на странице
 // @match        https://www.pinterest.*/*
 // @match        https://pinterest.com/*
@@ -17,7 +17,9 @@
   'use strict';
 
   // ---------- утилиты ----------
-  
+  const seen = new Set();
+  const pinLinks = new Map(); // pinKey -> url
+  const cmfvUrls = new Set();
 
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
