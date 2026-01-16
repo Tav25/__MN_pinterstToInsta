@@ -415,6 +415,10 @@
     return /\.cmfv(\?|$)/i.test(url);
   }
 
+  function isVideoUrl(url) {
+    return /\.(mp4|m3u8|cmfv)(\?|$)/i.test(url);
+  }
+
   function attachSniffedUrlToPin(url, container) {
     const normalized = normalizeUrl(url);
     if (seenUrls.has(normalized)) return;
@@ -553,26 +557,26 @@
     button.dataset.loading = 'true';
     try {
       let entry = await resolveVideoUrl(pinId);
-      if (entry && !isCmfvUrl(entry.url)) {
+      if (entry && !isVideoUrl(entry.url)) {
         entry = null;
       }
       if (!entry) {
         const fallbackUrl = extractVideoFromContainer(container);
         if (fallbackUrl) {
           const normalized = normalizeUrl(fallbackUrl);
-          if (isCmfvUrl(normalized)) {
+          if (isVideoUrl(normalized)) {
             entry = { url: normalized, quality: 'dom', pinId };
           }
         }
       }
       if (!entry) {
         const cached = pinCache.get(pinId);
-        if (cached && isCmfvUrl(cached.url)) {
+        if (cached && isVideoUrl(cached.url)) {
           entry = cached;
         }
       }
       if (!entry) {
-        showToast('CMFV-ссылка не найдена');
+        showToast('Ссылка не найдена');
         return;
       }
       addLinkToQueue(entry);
@@ -627,7 +631,7 @@
       try {
         const req = args[0];
         const url = req?.url ? req.url : String(req);
-        if (isCmfvUrl(url)) {
+        if (isVideoUrl(url)) {
           handleSniffedUrl(url);
         }
       } catch (e) {
@@ -636,7 +640,7 @@
       return origFetch.apply(this, args).then((res) => {
         try {
           const url = res.url || (args[0] && args[0].url) || String(args[0]);
-          if (isCmfvUrl(url)) {
+          if (isVideoUrl(url)) {
             handleSniffedUrl(url);
           }
         } catch (e) {
@@ -660,7 +664,7 @@
     XMLHttpRequest.prototype.send = function () {
       try {
         const url = this._pvlh_url;
-        if (url && isCmfvUrl(url)) {
+        if (url && isVideoUrl(url)) {
           handleSniffedUrl(url);
         }
       } catch (e) {
