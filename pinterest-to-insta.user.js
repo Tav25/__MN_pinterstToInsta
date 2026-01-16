@@ -382,6 +382,10 @@
     container.appendChild(btn);
   }
 
+  function isCmfvUrl(url) {
+    return /\.cmfv(\?|$)/i.test(url);
+  }
+
   function attachSniffedUrlToPin(url, container) {
     const normalized = normalizeUrl(url);
     if (seenUrls.has(normalized)) return;
@@ -408,10 +412,27 @@
     return null;
   }
 
+  function choosePreferredVideo(videoList) {
+    if (!videoList) return null;
+    for (const quality of qualityOrder) {
+      const url = videoList[quality]?.url;
+      if (url && isCmfvUrl(url)) {
+        return { url, quality: `${quality} (cmfv)` };
+      }
+    }
+    const entries = Object.values(videoList).filter((item) => item?.url);
+    for (const entry of entries) {
+      if (isCmfvUrl(entry.url)) {
+        return { url: entry.url, quality: 'cmfv' };
+      }
+    }
+    return chooseBestVideo(videoList);
+  }
+
   function extractVideoFromPinData(data) {
     if (!data) return null;
     const videoList = data.videos?.video_list;
-    const direct = chooseBestVideo(videoList);
+    const direct = choosePreferredVideo(videoList);
     if (direct) return direct;
     return null;
   }
@@ -467,7 +488,7 @@
     if (!script) return null;
     const data = JSON.parse(script.textContent);
     const videoList = findVideoListInObject(data, pinId);
-    return chooseBestVideo(videoList);
+    return choosePreferredVideo(videoList);
   }
 
   async function resolveVideoUrl(pinId) {
@@ -517,6 +538,10 @@
       }
       if (!entry) {
         showToast('Ссылка не найдена');
+        return;
+      }
+      if (!isCmfvUrl(entry.url)) {
+        showToast('CMFV-ссылка не найдена');
         return;
       }
       addLinkToQueue(entry);
@@ -571,7 +596,7 @@
       try {
         const req = args[0];
         const url = req?.url ? req.url : String(req);
-        if (/\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+        if (isCmfvUrl(url)) {
           handleSniffedUrl(url);
         }
       } catch (e) {
@@ -580,7 +605,7 @@
       return origFetch.apply(this, args).then((res) => {
         try {
           const url = res.url || (args[0] && args[0].url) || String(args[0]);
-          if (/\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+          if (isCmfvUrl(url)) {
             handleSniffedUrl(url);
           }
         } catch (e) {
@@ -604,7 +629,7 @@
     XMLHttpRequest.prototype.send = function () {
       try {
         const url = this._pvlh_url;
-        if (url && /\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+        if (url && isCmfvUrl(url)) {
           handleSniffedUrl(url);
         }
       } catch (e) {
