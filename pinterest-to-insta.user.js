@@ -25,6 +25,8 @@
   const qualityOrder = ['V_1080P', 'V_720P', 'V_540P', 'V_360P', 'V_HLSV4', 'V_HLSV3'];
   const pinCache = new Map();
   const seenUrls = new Set();
+  const pendingPins = new Map();
+  let lastPendingPin = null;
 
   const storage = {
     get(key, fallback) {
@@ -386,18 +388,24 @@
     return /\.cmfv(\?|$)/i.test(url);
   }
 
-  function attachSniffedUrlToPin(url, container) {
+  function attachSniffedUrlToPin(url, container, forcedPinId) {
     const normalized = normalizeUrl(url);
     if (seenUrls.has(normalized)) return;
     seenUrls.add(normalized);
 
-    const pinId = extractPinId(container);
+    const pinId = forcedPinId || extractPinId(container);
     const entry = { url: normalized, quality: 'sniffed', pinId: pinId || null };
     if (pinId) {
       pinCache.set(pinId, entry);
       savePinCache();
     }
     addLinkToQueue(entry);
+
+    if (pinId && pendingPins.has(pinId)) {
+      const resolve = pendingPins.get(pinId);
+      pendingPins.delete(pinId);
+      resolve(entry);
+    }
   }
 
   function chooseBestVideo(videoList) {
@@ -524,25 +532,31 @@
     button.dataset.loading = 'true';
     try {
       let entry = await resolveVideoUrl(pinId);
+      if (entry && !isCmfvUrl(entry.url)) {
+        entry = null;
+      }
       if (!entry) {
         const fallbackUrl = extractVideoFromContainer(container);
         if (fallbackUrl) {
-          entry = { url: normalizeUrl(fallbackUrl), quality: 'dom', pinId };
+          const normalized = normalizeUrl(fallbackUrl);
+          if (isCmfvUrl(normalized)) {
+            entry = { url: normalized, quality: 'dom', pinId };
+          }
         }
       }
       if (!entry) {
         const cached = pinCache.get(pinId);
-        if (cached) {
+        if (cached && isCmfvUrl(cached.url)) {
           entry = cached;
         }
       }
       if (!entry) {
-        showToast('Ссылка не найдена');
-        return;
-      }
-      if (!isCmfvUrl(entry.url)) {
-        showToast('CMFV-ссылка не найдена');
-        return;
+        showToast('Жду CMFV-ссылку...');
+        entry = await waitForSniffedCmfv(pinId, 4000);
+        if (!entry) {
+          showToast('CMFV-ссылка не найдена');
+          return;
+        }
       }
       addLinkToQueue(entry);
     } catch (error) {
@@ -584,7 +598,44 @@
     if (seenUrls.has(url)) return;
     const hovered = getHoveredElement();
     const container = findPinContainer(hovered || document.activeElement);
-    attachSniffedUrlToPin(url, container);
+    const pinId = container ? null : getLatestPendingPin();
+    attachSniffedUrlToPin(url, container, pinId);
+  }
+
+  function getLatestPendingPin() {
+    if (lastPendingPin && pendingPins.has(lastPendingPin)) {
+      return lastPendingPin;
+    }
+    const iterator = pendingPins.keys();
+    const { value } = iterator.next();
+    return value || null;
+  }
+
+  function waitForSniffedCmfv(pinId, timeoutMs) {
+    if (pinCache.has(pinId) && isCmfvUrl(pinCache.get(pinId).url)) {
+      return Promise.resolve(pinCache.get(pinId));
+    }
+    lastPendingPin = pinId;
+    if (pendingPins.has(pinId)) {
+      return new Promise((resolve) => {
+        const existing = pendingPins.get(pinId);
+        pendingPins.set(pinId, (entry) => {
+          existing(entry);
+          resolve(entry);
+        });
+      });
+    }
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        pendingPins.delete(pinId);
+        resolve(null);
+      }, timeoutMs);
+      pendingPins.set(pinId, (entry) => {
+        clearTimeout(timer);
+        pendingPins.delete(pinId);
+        resolve(entry);
+      });
+    });
   }
 
   function patchFetch() {
