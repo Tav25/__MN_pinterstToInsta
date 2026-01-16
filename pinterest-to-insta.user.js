@@ -7,7 +7,7 @@
 // @match        https://pinterest.com/*
 // @match        https://www.pinterest.com/*
 // @run-at       document-start
-// @grant        none
+// @grant        none33
 // ==/UserScript==
 
 (function () {
