@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pinterest video link helper
 // @namespace    https://your.namespace.example
-// @version      0.5
+// @version      0.6
 // @description  Добавляет кнопку скачивания на видео-пины и собирает прямые ссылки в панель
 // @match        https://www.pinterest.*/*
 // @match        https://pinterest.com/*
@@ -24,6 +24,7 @@
 
   const qualityOrder = ['V_1080P', 'V_720P', 'V_540P', 'V_360P', 'V_HLSV4', 'V_HLSV3'];
   const pinCache = new Map();
+  const seenUrls = new Set();
 
   const storage = {
     get(key, fallback) {
@@ -52,6 +53,12 @@
     } catch (e) {
       return String(u);
     }
+  }
+
+  function getHoveredElement() {
+    const path = document.querySelectorAll(':hover');
+    if (!path || !path.length) return null;
+    return path[path.length - 1];
   }
 
   function loadQueue() {
@@ -330,6 +337,18 @@
     return null;
   }
 
+  function extractVideoFromContainer(container) {
+    if (!container) return null;
+    const video = container.querySelector('video');
+    if (video) {
+      const source = video.currentSrc || video.src;
+      if (source) return source;
+      const sourceEl = video.querySelector('source');
+      if (sourceEl?.src) return sourceEl.src;
+    }
+    return null;
+  }
+
   function isVideoPin(container) {
     if (!container) return false;
     if (container.querySelector('video')) return true;
@@ -353,7 +372,7 @@
         showToast('Не найден pin-id');
         return;
       }
-      await handleDownload(pinId, btn);
+      await handleDownload(pinId, btn, container);
     });
 
     const style = window.getComputedStyle(container);
@@ -361,6 +380,20 @@
       container.style.position = 'relative';
     }
     container.appendChild(btn);
+  }
+
+  function attachSniffedUrlToPin(url, container) {
+    const normalized = normalizeUrl(url);
+    if (seenUrls.has(normalized)) return;
+    seenUrls.add(normalized);
+
+    const pinId = extractPinId(container);
+    const entry = { url: normalized, quality: 'sniffed', pinId: pinId || null };
+    if (pinId) {
+      pinCache.set(pinId, entry);
+      savePinCache();
+    }
+    addLinkToQueue(entry);
   }
 
   function chooseBestVideo(videoList) {
@@ -466,10 +499,22 @@
     return null;
   }
 
-  async function handleDownload(pinId, button) {
+  async function handleDownload(pinId, button, container) {
     button.dataset.loading = 'true';
     try {
-      const entry = await resolveVideoUrl(pinId);
+      let entry = await resolveVideoUrl(pinId);
+      if (!entry) {
+        const fallbackUrl = extractVideoFromContainer(container);
+        if (fallbackUrl) {
+          entry = { url: normalizeUrl(fallbackUrl), quality: 'dom', pinId };
+        }
+      }
+      if (!entry) {
+        const cached = pinCache.get(pinId);
+        if (cached) {
+          entry = cached;
+        }
+      }
       if (!entry) {
         showToast('Ссылка не найдена');
         return;
@@ -509,6 +554,66 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  function handleSniffedUrl(rawUrl) {
+    const url = normalizeUrl(rawUrl);
+    if (seenUrls.has(url)) return;
+    const hovered = getHoveredElement();
+    const container = findPinContainer(hovered || document.activeElement);
+    attachSniffedUrlToPin(url, container);
+  }
+
+  function patchFetch() {
+    if (window._pvlh_fetch_patched) return;
+    window._pvlh_fetch_patched = true;
+
+    const origFetch = window.fetch;
+    window.fetch = async function (...args) {
+      try {
+        const req = args[0];
+        const url = req?.url ? req.url : String(req);
+        if (/\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+          handleSniffedUrl(url);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return origFetch.apply(this, args).then((res) => {
+        try {
+          const url = res.url || (args[0] && args[0].url) || String(args[0]);
+          if (/\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+            handleSniffedUrl(url);
+          }
+        } catch (e) {
+          // ignore
+        }
+        return res;
+      });
+    };
+  }
+
+  function patchXHR() {
+    if (window._pvlh_xhr_patched) return;
+    window._pvlh_xhr_patched = true;
+
+    const origOpen = XMLHttpRequest.prototype.open;
+    const origSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
+      this._pvlh_url = url;
+      return origOpen.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.send = function () {
+      try {
+        const url = this._pvlh_url;
+        if (url && /\.(mp4|m3u8|cmfv)(\?|$)/i.test(url)) {
+          handleSniffedUrl(url);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return origSend.apply(this, arguments);
+    };
+  }
+
   function onReady(cb) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', cb, { once: true });
@@ -545,6 +650,8 @@
       ensurePanel();
       scanAndAttachButtons(document);
       observePins();
+      patchFetch();
+      patchXHR();
       hookHistory();
     } catch (error) {
       console.error('[PVLH] init error', error);
