@@ -25,8 +25,6 @@
   const qualityOrder = ['V_1080P', 'V_720P', 'V_540P', 'V_360P', 'V_HLSV4', 'V_HLSV3'];
   const pinCache = new Map();
   const seenUrls = new Set();
-  const pendingPins = new Map();
-  let lastPendingPin = null;
 
   const storage = {
     get(key, fallback) {
@@ -121,28 +119,21 @@
     `;
     const css = document.createElement('style');
     css.textContent = `
-      body {
-        padding-right: 20vw;
-        box-sizing: border-box;
-      }
       #pvlh-panel {
         position: fixed;
-        right: 0;
-        top: 0;
-        width: 20vw;
-        min-width: 240px;
-        max-width: 420px;
-        height: 100vh;
+        right: 12px;
+        top: 12px;
+        width: 320px;
         z-index: 99999;
         background: #0d3b66;
         color: #faf0ca;
-        border-radius: 10px 0 0 10px;
+        border-radius: 10px;
         box-shadow: 0 6px 18px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 12px 12px 16px;
+        gap: 8px;
+        padding: 12px;
       }
       #pvlh-header {
         display: flex;
@@ -157,7 +148,8 @@
         font-weight: 500;
       }
       #pvlh-list-wrap {
-        flex: 1;
+        min-height: 140px;
+        max-height: 35vh;
         background: #082946;
         border-radius: 8px;
         border: 1px solid rgba(255,255,255,.2);
@@ -423,24 +415,18 @@
     return /\.cmfv(\?|$)/i.test(url);
   }
 
-  function attachSniffedUrlToPin(url, container, forcedPinId) {
+  function attachSniffedUrlToPin(url, container) {
     const normalized = normalizeUrl(url);
     if (seenUrls.has(normalized)) return;
     seenUrls.add(normalized);
 
-    const pinId = forcedPinId || extractPinId(container);
+    const pinId = extractPinId(container);
     const entry = { url: normalized, quality: 'sniffed', pinId: pinId || null };
     if (pinId) {
       pinCache.set(pinId, entry);
       savePinCache();
     }
     addLinkToQueue(entry);
-
-    if (pinId && pendingPins.has(pinId)) {
-      const resolve = pendingPins.get(pinId);
-      pendingPins.delete(pinId);
-      resolve(entry);
-    }
   }
 
   function chooseBestVideo(videoList) {
@@ -586,12 +572,8 @@
         }
       }
       if (!entry) {
-        showToast('Жду CMFV-ссылку...');
-        entry = await waitForSniffedCmfv(pinId, 4000);
-        if (!entry) {
-          showToast('CMFV-ссылка не найдена');
-          return;
-        }
+        showToast('CMFV-ссылка не найдена');
+        return;
       }
       addLinkToQueue(entry);
     } catch (error) {
@@ -633,44 +615,7 @@
     if (seenUrls.has(url)) return;
     const hovered = getHoveredElement();
     const container = findPinContainer(hovered || document.activeElement);
-    const pinId = container ? null : getLatestPendingPin();
-    attachSniffedUrlToPin(url, container, pinId);
-  }
-
-  function getLatestPendingPin() {
-    if (lastPendingPin && pendingPins.has(lastPendingPin)) {
-      return lastPendingPin;
-    }
-    const iterator = pendingPins.keys();
-    const { value } = iterator.next();
-    return value || null;
-  }
-
-  function waitForSniffedCmfv(pinId, timeoutMs) {
-    if (pinCache.has(pinId) && isCmfvUrl(pinCache.get(pinId).url)) {
-      return Promise.resolve(pinCache.get(pinId));
-    }
-    lastPendingPin = pinId;
-    if (pendingPins.has(pinId)) {
-      return new Promise((resolve) => {
-        const existing = pendingPins.get(pinId);
-        pendingPins.set(pinId, (entry) => {
-          existing(entry);
-          resolve(entry);
-        });
-      });
-    }
-    return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        pendingPins.delete(pinId);
-        resolve(null);
-      }, timeoutMs);
-      pendingPins.set(pinId, (entry) => {
-        clearTimeout(timer);
-        pendingPins.delete(pinId);
-        resolve(entry);
-      });
-    });
+    attachSniffedUrlToPin(url, container);
   }
 
   function patchFetch() {
