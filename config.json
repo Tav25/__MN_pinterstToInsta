@@ -1,0 +1,14 @@
+{
+    "pinterest": {
+        "apiUrl": "https://www.pinterest.com",
+        "authToken": "your_pinterest_auth_token"
+    },
+    "instagram": {
+        "apiUrl": "https://www.instagram.com",
+        "authToken": "your_instagram_auth_token"
+    },
+    "settings": {
+        "maxRetries": 3,
+        "timeout": 5000
+    }
+}
