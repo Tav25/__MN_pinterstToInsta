@@ -135,23 +135,24 @@
 
     const tr = document.createElement('tr');
     const tdImg = document.createElement('td');
-    tdImg.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto;">`;
+    const img = document.createElement('img');
+    img.src = thumbUrl;
+    img.style.cssText = 'width:30px; height:auto; vertical-align:middle;';
+    tdImg.appendChild(img);
+    const btnAdd = document.createElement('button');
+    btnAdd.textContent = 'Добавить';
+    btnAdd.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-left: 6px;';
+    btnAdd.onclick = () => addToStorage(url);
+    tdImg.appendChild(btnAdd);
     const tdLink = document.createElement('td');
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = title ? `${title} — ${url}` : url;
-    tdLink.appendChild(a);
-    const tdBtn = document.createElement('td');
-    const btn = document.createElement('button');
-    btn.textContent = 'Добавить';
-    btn.style.cssText = 'font-size: 12px; padding: 2px 4px;';
-    btn.onclick = () => addToStorage(url);
-    tdBtn.appendChild(btn);
+    const btnOpen = document.createElement('button');
+    btnOpen.textContent = 'Открыть';
+    btnOpen.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-right: 6px;';
+    btnOpen.onclick = () => window.open(url, '_blank');
+    tdLink.appendChild(btnOpen);
+    tdLink.appendChild(document.createTextNode(title ? `${title} — ${url}` : url));
     tr.appendChild(tdImg);
     tr.appendChild(tdLink);
-    tr.appendChild(tdBtn);
     tbody.prepend(tr);
     count.textContent = String(m3u8Urls.size);
   }
