@@ -39,7 +39,7 @@
   }
 
   function downloadLinks() {
-    const links = getStoredLinks();
+    const links = getStoredLinks().filter(link => /(_audio\.cmfa|_720w\.cmfv)$/i.test(link));
     if (links.length === 0) {
       alert('Нет добавленных ссылок для скачивания.');
       return;
