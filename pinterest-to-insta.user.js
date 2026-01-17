@@ -24,10 +24,10 @@
   // localStorage для добавленных ссылок
   function addToStorage(url) {
     let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
-    if (!links.includes(url)) {
-      links.push(url);
-      localStorage.setItem('addedM3u8Links', JSON.stringify(links));
-    }
+    if (links.includes(url)) return false;
+    links.push(url);
+    localStorage.setItem('addedM3u8Links', JSON.stringify(links));
+    return true;
   }
 
   function getStoredLinks() {
@@ -152,6 +152,12 @@
         background: #2bb673; border-color: #2bb673;
       }
       .m3u8-btn-add:hover { background: #1fa463; }
+      .m3u8-added .m3u8-btn-add {
+        background: #3a3a3a; border-color: #4b4b4b; color: #d7d7d7;
+      }
+      .m3u8-added .m3u8-thumb {
+        filter: grayscale(100%) brightness(.8);
+      }
       .m3u8-thumb {
         width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
       }
@@ -195,7 +201,14 @@
     const btnAdd = document.createElement('button');
     btnAdd.textContent = 'Добавить';
     btnAdd.className = 'm3u8-btn m3u8-btn-add';
-    btnAdd.onclick = () => addToStorage(url);
+    if (getStoredLinks().includes(url)) {
+      tr.classList.add('m3u8-added');
+    }
+    btnAdd.onclick = () => {
+      if (addToStorage(url)) {
+        tr.classList.add('m3u8-added');
+      }
+    };
     tdLink.appendChild(btnOpen);
     tdLink.appendChild(btnAdd);
   }
