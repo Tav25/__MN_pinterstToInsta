@@ -129,6 +129,9 @@
       #m3u8-list td:first-child {
         width: 60px; text-align: center;
       }
+      #m3u8-list td:last-child {
+        display: flex; align-items: center; gap: 8px;
+      }
       #m3u8-list a {
         text-decoration: none; color: #bde0ff; word-break: break-word;
       }
@@ -144,6 +147,14 @@
         background: #2f7ef6; border-color: #2f7ef6;
       }
       .m3u8-btn-primary:hover { background: #1f6fe8; }
+      .m3u8-btn-open {
+        background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
+      }
+      .m3u8-btn-open:hover { background: rgba(255,255,255,.26); }
+      .m3u8-btn-add {
+        background: #2bb673; border-color: #2bb673;
+      }
+      .m3u8-btn-add:hover { background: #1fa463; }
       .m3u8-chip {
         display: inline-flex; align-items: center; gap: 6px;
         background: rgba(20,20,20,.85); color: #bde0ff;
@@ -154,9 +165,6 @@
       .m3u8-chip a:hover { text-decoration: underline; }
       .m3u8-thumb {
         width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
-      }
-      .m3u8-actions {
-        display: flex; align-items: center; gap: 6px; margin-top: 6px;
       }
     `;
     document.documentElement.appendChild(css);
@@ -179,21 +187,17 @@
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
     tdImg.appendChild(img);
-    const btnAdd = document.createElement('button');
-    btnAdd.textContent = 'Добавить';
-    btnAdd.className = 'm3u8-btn';
-    btnAdd.onclick = () => addToStorage(url);
-    const actions = document.createElement('div');
-    actions.className = 'm3u8-actions';
-    actions.appendChild(btnAdd);
-    tdImg.appendChild(actions);
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
     btnOpen.textContent = 'Открыть';
-    btnOpen.className = 'm3u8-btn';
+    btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => window.open(url, '_blank');
+    const btnAdd = document.createElement('button');
+    btnAdd.textContent = 'Добавить';
+    btnAdd.className = 'm3u8-btn m3u8-btn-add';
+    btnAdd.onclick = () => addToStorage(url);
     tdLink.appendChild(btnOpen);
-    tdLink.appendChild(document.createTextNode(title ? `${title} — ${url}` : url));
+    tdLink.appendChild(btnAdd);
     tr.appendChild(tdImg);
     tr.appendChild(tdLink);
     tbody.prepend(tr);
