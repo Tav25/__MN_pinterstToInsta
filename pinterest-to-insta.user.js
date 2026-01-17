@@ -84,11 +84,17 @@
     if (m3u8Urls.has(url)) return;
     m3u8Urls.add(url);
 
+    // извлекаем ID для превью
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    const id = filename.replace('.m3u8', '').replace(/\?.*/, '');
+    const thumbUrl = `https://i.pinimg.com/videos/thumbnails/originals/${id}.0000000.jpg`;
+
     const a = document.createElement('a');
     a.href = url;
     a.target = '_blank';
     a.rel = 'noopener';
-    a.textContent = title ? `${title} — ${url}` : url;
+    a.innerHTML = `<img src="${thumbUrl}" style="width:10px; height:10px; vertical-align:middle; margin-right:5px;"> ${title ? `${title} — ${url}` : url}`;
     list.prepend(a);
     count.textContent = String(m3u8Urls.size);
   }
