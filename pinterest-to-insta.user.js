@@ -81,35 +81,69 @@
     const panel = document.createElement('div');
     panel.id = 'm3u8-panel';
     panel.innerHTML = `
-      <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span> <button id="download-btn" style="margin-left: 10px; font-size: 12px;">Скачать</button></div>
-      <table id="m3u8-list"><tbody></tbody></table>
+      <div id="m3u8-header">
+        <div class="m3u8-title">
+          M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
+        </div>
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
+      </div>
+      <div id="m3u8-body">
+        <table id="m3u8-list"><tbody></tbody></table>
+      </div>
     `;
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
         position: fixed; right: 12px; bottom: 12px; z-index: 99999;
-        width: 320px; max-height: 45vh; overflow: auto;
-        background: rgba(20,20,20,.9); color: #fff; border-radius: 8px;
-        backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        width: 360px; max-height: 45vh;
+        background: rgba(18,18,18,.92); color: #fff; border-radius: 10px;
+        backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
+        overflow: hidden;
       }
       #m3u8-header {
-        position: sticky; top: 0; padding: 10px 12px; font-weight: 600;
-        background: rgba(0,0,0,.35); border-bottom: 1px solid rgba(255,255,255,.1);
+        position: sticky; top: 0; z-index: 1;
+        padding: 10px 12px; font-weight: 600;
+        background: rgba(0,0,0,.4); border-bottom: 1px solid rgba(255,255,255,.08);
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      }
+      .m3u8-title {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .m3u8-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 20px; padding: 2px 6px; border-radius: 999px;
+        background: rgba(255,255,255,.12); font-weight: 600;
+      }
+      #m3u8-body {
+        max-height: calc(45vh - 44px);
+        overflow: auto;
       }
       #m3u8-list {
         width: 100%; border-collapse: collapse;
       }
+      #m3u8-list tr { border-bottom: 1px solid rgba(255,255,255,.06); }
       #m3u8-list td {
         padding: 8px 12px; vertical-align: middle;
       }
       #m3u8-list td:first-child {
-        width: 35px; text-align: center;
+        width: 60px; text-align: center;
       }
       #m3u8-list a {
-        text-decoration: none; color: #bde0ff; word-break: break-all;
+        text-decoration: none; color: #bde0ff; word-break: break-word;
       }
-      #m3u8-list tr:hover { background: rgba(255,255,255,.06); }
+      #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
+      .m3u8-btn {
+        border: 1px solid rgba(255,255,255,.2);
+        background: rgba(255,255,255,.08);
+        color: #fff; border-radius: 6px; padding: 4px 8px;
+        font-size: 12px; cursor: pointer;
+      }
+      .m3u8-btn:hover { background: rgba(255,255,255,.18); }
+      .m3u8-btn-primary {
+        background: #2f7ef6; border-color: #2f7ef6;
+      }
+      .m3u8-btn-primary:hover { background: #1f6fe8; }
       .m3u8-chip {
         display: inline-flex; align-items: center; gap: 6px;
         background: rgba(20,20,20,.85); color: #bde0ff;
@@ -118,6 +152,12 @@
       }
       .m3u8-chip a { color: #bde0ff; text-decoration: none; }
       .m3u8-chip a:hover { text-decoration: underline; }
+      .m3u8-thumb {
+        width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
+      }
+      .m3u8-actions {
+        display: flex; align-items: center; gap: 6px; margin-top: 6px;
+      }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
@@ -137,17 +177,20 @@
     const tdImg = document.createElement('td');
     const img = document.createElement('img');
     img.src = thumbUrl;
-    img.style.cssText = 'width:30px; height:auto; vertical-align:middle;';
+    img.className = 'm3u8-thumb';
     tdImg.appendChild(img);
     const btnAdd = document.createElement('button');
     btnAdd.textContent = 'Добавить';
-    btnAdd.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-left: 6px;';
+    btnAdd.className = 'm3u8-btn';
     btnAdd.onclick = () => addToStorage(url);
-    tdImg.appendChild(btnAdd);
+    const actions = document.createElement('div');
+    actions.className = 'm3u8-actions';
+    actions.appendChild(btnAdd);
+    tdImg.appendChild(actions);
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
     btnOpen.textContent = 'Открыть';
-    btnOpen.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-right: 6px;';
+    btnOpen.className = 'm3u8-btn';
     btnOpen.onclick = () => window.open(url, '_blank');
     tdLink.appendChild(btnOpen);
     tdLink.appendChild(document.createTextNode(title ? `${title} — ${url}` : url));
@@ -209,17 +252,13 @@
     if (!chip) {
       chip = document.createElement('div');
       chip.className = 'm3u8-chip';
-      chip.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto; vertical-align:middle;"> 🎬 <a target="_blank" rel="noopener" href="${url}">Открыть .m3u8</a>`;
+      chip.innerHTML = `<img src="${thumbUrl}" class="m3u8-thumb"> 🎬 <a target="_blank" rel="noopener" href="${url}">Открыть .m3u8</a>`;
       // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
       container.appendChild(chip);
     } else {
       // обновим img src и href, на случай если URL изменился
       const img = chip.querySelector('img');
-      if (img) {
-        img.src = thumbUrl;
-        img.style.width = '30px';
-        img.style.height = 'auto';
-      }
+      if (img) img.src = thumbUrl;
       const link = chip.querySelector('a');
       if (link) link.href = url;
     }
