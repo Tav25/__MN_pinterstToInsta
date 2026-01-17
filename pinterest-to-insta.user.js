@@ -20,6 +20,7 @@
   const seen = new Set();
   const pinLinks = new Map(); // pinKey -> url
   const m3u8Urls = new Set();
+  const pendingM3u8Urls = new Set();
 
   // localStorage для добавленных ссылок
   function addToStorage(url) {
@@ -96,7 +97,7 @@
       #m3u8-panel {
         position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
         width: 300px; height: calc(100vh - 24px);
-        background: rgba(18,18,18,.2); color: #fff; border-radius: 10px;
+        background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
@@ -176,8 +177,8 @@
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
-    if (m3u8Urls.has(url)) return;
-    m3u8Urls.add(url);
+    if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
+    pendingM3u8Urls.add(url);
 
     const thumbUrl = getThumbUrl(url);
 
@@ -186,7 +187,18 @@
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
-    tdImg.appendChild(img);
+    img.onload = () => {
+      pendingM3u8Urls.delete(url);
+      m3u8Urls.add(url);
+      tdImg.appendChild(img);
+      tr.appendChild(tdImg);
+      tr.appendChild(tdLink);
+      tbody.prepend(tr);
+      count.textContent = String(m3u8Urls.size);
+    };
+    img.onerror = () => {
+      pendingM3u8Urls.delete(url);
+    };
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
     btnOpen.textContent = 'Открыть';
@@ -198,10 +210,6 @@
     btnAdd.onclick = () => addToStorage(url);
     tdLink.appendChild(btnOpen);
     tdLink.appendChild(btnAdd);
-    tr.appendChild(tdImg);
-    tr.appendChild(tdLink);
-    tbody.prepend(tr);
-    count.textContent = String(m3u8Urls.size);
   }
 
   // ---------- привязка к карточке пина ----------
