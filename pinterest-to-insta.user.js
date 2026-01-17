@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Pinterest CMFV link helper
+// @name         Pinterest M3U8 link helper
 // @namespace    https://your.namespace.example
 // @version      0.4
-// @description  Показывает ссылку на .cmfv под пином и собирает все найденные .cmfv-URL на странице
+// @description  Показывает ссылку на .m3u8 под пином и собирает все найденные .m3u8-URL на странице
 // @match        https://www.pinterest.*/*
 // @match        https://pinterest.com/*
 // @match        https://www.pinterest.com/*
@@ -19,7 +19,7 @@
   // ---------- утилиты ----------
   const seen = new Set();
   const pinLinks = new Map(); // pinKey -> url
-  const cmfvUrls = new Set();
+  const m3u8Urls = new Set();
 
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
@@ -39,39 +39,39 @@
 
   // ---------- UI: плавающая панель ----------
   function ensurePanel() {
-    if (document.getElementById('cmfv-panel')) return;
+    if (document.getElementById('m3u8-panel')) return;
     const panel = document.createElement('div');
-    panel.id = 'cmfv-panel';
+    panel.id = 'm3u8-panel';
     panel.innerHTML = `
-      <div id="cmfv-header">CMFV найдено <span id="cmfv-count">0</span></div>
-      <div id="cmfv-list"></div>
+      <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span></div>
+      <div id="m3u8-list"></div>
     `;
     const css = document.createElement('style');
     css.textContent = `
-      #cmfv-panel {
+      #m3u8-panel {
         position: fixed; right: 12px; bottom: 12px; z-index: 99999;
         width: 320px; max-height: 45vh; overflow: auto;
         background: rgba(20,20,20,.9); color: #fff; border-radius: 8px;
         backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
       }
-      #cmfv-header {
+      #m3u8-header {
         position: sticky; top: 0; padding: 10px 12px; font-weight: 600;
         background: rgba(0,0,0,.35); border-bottom: 1px solid rgba(255,255,255,.1);
       }
-      #cmfv-list a {
+      #m3u8-list a {
         display: block; padding: 8px 12px; text-decoration: none;
         color: #bde0ff; word-break: break-all;
       }
-      #cmfv-list a:hover { background: rgba(255,255,255,.06); }
-      .cmfv-chip {
+      #m3u8-list a:hover { background: rgba(255,255,255,.06); }
+      .m3u8-chip {
         display: inline-flex; align-items: center; gap: 6px;
         background: rgba(20,20,20,.85); color: #bde0ff;
         border: 1px solid rgba(189,224,255,.25);
         padding: 6px 8px; margin-top: 6px; border-radius: 6px; font-size: 12px;
       }
-      .cmfv-chip a { color: #bde0ff; text-decoration: none; }
-      .cmfv-chip a:hover { text-decoration: underline; }
+      .m3u8-chip a { color: #bde0ff; text-decoration: none; }
+      .m3u8-chip a:hover { text-decoration: underline; }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
@@ -79,10 +79,10 @@
 
   function addToPanel(url, title) {
     ensurePanel();
-    const list = document.getElementById('cmfv-list');
-    const count = document.getElementById('cmfv-count');
-    if (cmfvUrls.has(url)) return;
-    cmfvUrls.add(url);
+    const list = document.getElementById('m3u8-list');
+    const count = document.getElementById('m3u8-count');
+    if (m3u8Urls.has(url)) return;
+    m3u8Urls.add(url);
 
     const a = document.createElement('a');
     a.href = url;
@@ -90,7 +90,7 @@
     a.rel = 'noopener';
     a.textContent = title ? `${title} — ${url}` : url;
     list.prepend(a);
-    count.textContent = String(cmfvUrls.size);
+    count.textContent = String(m3u8Urls.size);
   }
 
   // ---------- привязка к карточке пина ----------
@@ -139,11 +139,11 @@
     if (!pinKey) return false;
 
     // если уже добавляли чип к этому пину — обновим URL
-    let chip = container.querySelector('.cmfv-chip');
+    let chip = container.querySelector('.m3u8-chip');
     if (!chip) {
       chip = document.createElement('div');
-      chip.className = 'cmfv-chip';
-      chip.innerHTML = `🎬 <a target="_blank" rel="noopener">Открыть .cmfv</a>`;
+      chip.className = 'm3u8-chip';
+      chip.innerHTML = `🎬 <a target="_blank" rel="noopener">Открыть .m3u8</a>`;
       // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
       container.appendChild(chip);
     }
@@ -157,6 +157,8 @@
   function handleFoundUrl(rawUrl) {
     const url = normalizeUrl(rawUrl);
     if (seen.has(url)) return;
+    // исключим файлы заканчивающиеся на 0w.m3u8 или _audio.m3u8
+    if (/0w\.m3u8(\?|$)|_audio\.m3u8(\?|$)/i.test(url)) return;
     seen.add(url);
 
     // 1) пробуем привязать к карточке под курсором
@@ -167,25 +169,25 @@
     // 2) в любом случае — добавим в плавающую панель
     const title = pin ? (pin.getAttribute('aria-label') || pin.textContent?.trim().slice(0,60)) : '';
     addToPanel(url, title);
-    log('CMFV:', url, attached ? 'attached' : 'panel-only');
+    log('M3U8:', url, attached ? 'attached' : 'panel-only');
   }
 
   // ---------- перехват fetch / XHR ----------
   function patchFetch() {
-    if (window._cmfv_fetch_patched) return;
-    window._cmfv_fetch_patched = true;
+    if (window._m3u8_fetch_patched) return;
+    window._m3u8_fetch_patched = true;
 
     const origFetch = window.fetch;
     window.fetch = async function (...args) {
       try {
         const req = args[0];
         const url = (req && req.url) ? req.url : String(req);
-        if (/\.cmfv(\?|$)/i.test(url)) handleFoundUrl(url);
+        if (/\.m3u8(\?|$)/i.test(url)) handleFoundUrl(url);
       } catch (e) {}
       return origFetch.apply(this, args).then(res => {
         try {
           const url = res.url || (args[0] && args[0].url) || String(args[0]);
-          if (/\.cmfv(\?|$)/i.test(url)) handleFoundUrl(url);
+          if (/\.m3u8(\?|$)/i.test(url)) handleFoundUrl(url);
         } catch (e) {}
         return res;
       });
@@ -193,19 +195,19 @@
   }
 
   function patchXHR() {
-    if (window._cmfv_xhr_patched) return;
-    window._cmfv_xhr_patched = true;
+    if (window._m3u8_xhr_patched) return;
+    window._m3u8_xhr_patched = true;
 
     const origOpen = XMLHttpRequest.prototype.open;
     const origSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
-      this._cmfv_url = url;
+      this._m3u8_url = url;
       return origOpen.apply(this, arguments);
     };
     XMLHttpRequest.prototype.send = function () {
       try {
-        const url = this._cmfv_url;
-        if (url && /\.cmfv(\?|$)/i.test(url)) handleFoundUrl(url);
+        const url = this._m3u8_url;
+        if (url && /\.m3u8(\?|$)/i.test(url)) handleFoundUrl(url);
       } catch (e) {}
       return origSend.apply(this, arguments);
     };
@@ -241,9 +243,9 @@
       patchFetch();
       patchXHR();
       hookHistory();
-      log('CMFV helper started');
+      log('M3U8 helper started');
     } catch (e) {
-      console.error('[CMFV] init error', e);
+      console.error('[M3U8] init error', e);
     }
   });
 
