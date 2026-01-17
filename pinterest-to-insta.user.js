@@ -38,13 +38,37 @@
     localStorage.removeItem('addedM3u8Links');
   }
 
+  function deriveCmfLinks(link) {
+    try {
+      const url = new URL(link, location.href);
+      if (!/\.m3u8$/i.test(url.pathname)) return [];
+      const base = url.pathname.replace(/\.m3u8$/i, '');
+      const audioUrl = new URL(url.toString());
+      const videoUrl = new URL(url.toString());
+      audioUrl.pathname = `${base}_audio.cmfa`;
+      videoUrl.pathname = `${base}_720w.cmfv`;
+      return [audioUrl.toString(), videoUrl.toString()];
+    } catch (e) {
+      return [];
+    }
+  }
+
   function downloadLinks() {
-    const links = getStoredLinks().filter(link => /(_audio\.cmfa|_720w\.cmfv)(\?|$)/i.test(link));
-    if (links.length === 0) {
+    const links = getStoredLinks();
+    const downloadSet = new Set();
+    links.forEach(link => {
+      if (/(_audio\.cmfa|_720w\.cmfv)(\?|$)/i.test(link)) {
+        downloadSet.add(link);
+        return;
+      }
+      deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
+    });
+    const downloadLinks = Array.from(downloadSet);
+    if (downloadLinks.length === 0) {
       alert('Нет добавленных ссылок для скачивания.');
       return;
     }
-    const text = links.join('\n');
+    const text = downloadLinks.join('\n');
     const blob = new Blob([text], {type: 'text/plain'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
