@@ -21,6 +21,35 @@
   const m3u8Urls = new Set();
   const pendingM3u8Urls = new Set();
 
+  // localStorage для добавленных ссылок
+  function addToStorage(url) {
+    let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
+    if (!links.includes(url)) {
+      links.push(url);
+      localStorage.setItem('addedM3u8Links', JSON.stringify(links));
+    }
+  }
+
+  function getStoredLinks() {
+    return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
+  }
+
+  function downloadLinks() {
+    const links = getStoredLinks();
+    if (links.length === 0) {
+      alert('Нет добавленных ссылок для скачивания.');
+      return;
+    }
+    const text = links.join('\n');
+    const blob = new Blob([text], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'm3u8_links.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
     try {
@@ -56,6 +85,7 @@
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
       </div>
       <div id="m3u8-body">
         <table id="m3u8-list"><tbody></tbody></table>
@@ -103,12 +133,32 @@
         display: flex; align-items: center; gap: 8px;
       }
       #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
+      .m3u8-btn {
+        border: 1px solid rgba(255,255,255,.2);
+        background: rgba(255,255,255,.08);
+        color: #fff; border-radius: 6px; padding: 4px 8px;
+        font-size: 12px; cursor: pointer;
+      }
+      .m3u8-btn:hover { background: rgba(255,255,255,.18); }
+      .m3u8-btn-primary {
+        background: #2f7ef6; border-color: #2f7ef6;
+      }
+      .m3u8-btn-primary:hover { background: #1f6fe8; }
+      .m3u8-btn-open {
+        background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
+      }
+      .m3u8-btn-open:hover { background: rgba(255,255,255,.26); }
+      .m3u8-btn-add {
+        background: #2bb673; border-color: #2bb673;
+      }
+      .m3u8-btn-add:hover { background: #1fa463; }
       .m3u8-thumb {
         width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
       }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
+    document.getElementById('download-btn').addEventListener('click', downloadLinks);
   }
 
   function addToPanel(url, title) {
@@ -138,9 +188,16 @@
       pendingM3u8Urls.delete(url);
     };
     const tdLink = document.createElement('td');
-    if (title) {
-      tdLink.textContent = title;
-    }
+    const btnOpen = document.createElement('button');
+    btnOpen.textContent = 'Открыть';
+    btnOpen.className = 'm3u8-btn m3u8-btn-open';
+    btnOpen.onclick = () => window.open(url, '_blank');
+    const btnAdd = document.createElement('button');
+    btnAdd.textContent = 'Добавить';
+    btnAdd.className = 'm3u8-btn m3u8-btn-add';
+    btnAdd.onclick = () => addToStorage(url);
+    tdLink.appendChild(btnOpen);
+    tdLink.appendChild(btnAdd);
   }
 
   // ---------- привязка к карточке пина ----------
