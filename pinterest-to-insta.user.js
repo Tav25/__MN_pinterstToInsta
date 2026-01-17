@@ -94,9 +94,9 @@
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
-        position: fixed; right: 12px; bottom: 12px; z-index: 99999;
-        width: 360px; max-height: 45vh;
-        background: rgba(18,18,18,.92); color: #fff; border-radius: 10px;
+        position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
+        width: 300px; height: calc(100vh - 24px);
+        background: rgba(18,18,18,.2); color: #fff; border-radius: 10px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
@@ -116,7 +116,7 @@
         background: rgba(255,255,255,.12); font-weight: 600;
       }
       #m3u8-body {
-        max-height: calc(45vh - 44px);
+        height: calc(100% - 44px);
         overflow: auto;
       }
       #m3u8-list {
