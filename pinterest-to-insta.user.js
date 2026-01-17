@@ -34,6 +34,10 @@
     return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
   }
 
+  function clearStoredLinks() {
+    localStorage.removeItem('addedM3u8Links');
+  }
+
   function downloadLinks() {
     const links = getStoredLinks();
     if (links.length === 0) {
@@ -91,6 +95,10 @@
       <div id="m3u8-body">
         <table id="m3u8-list"><tbody></tbody></table>
       </div>
+      <div id="m3u8-footer">
+        <span>Добавлено <span id="m3u8-footer-count">0</span></span>
+        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Очистить</button>
+      </div>
     `;
     const css = document.createElement('style');
     css.textContent = `
@@ -120,8 +128,14 @@
         background: rgba(255,255,255,.12); font-weight: 600;
       }
       #m3u8-body {
-        height: calc(100% - 44px);
+        height: calc(100% - 88px);
         overflow: auto;
+      }
+      #m3u8-footer {
+        position: sticky; bottom: 0; z-index: 1;
+        padding: 8px 12px; font-weight: 500;
+        background: rgba(0,0,0,.35); border-top: 1px solid rgba(255,255,255,.08);
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
       #m3u8-list {
         width: 100%; border-collapse: collapse;
@@ -159,6 +173,10 @@
         background: #2bb673; border-color: #2bb673;
       }
       .m3u8-btn-add:hover { background: #1fa463; }
+      .m3u8-btn-clear {
+        background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22);
+      }
+      .m3u8-btn-clear:hover { background: rgba(255,255,255,.22); }
       .m3u8-added .m3u8-btn-add {
         background: #3a3a3a; border-color: #4b4b4b; color: #d7d7d7;
       }
@@ -172,7 +190,22 @@
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
-    document.getElementById('m3u8-added-count').textContent = String(getStoredLinks().length);
+    const initialAdded = String(getStoredLinks().length);
+    document.getElementById('m3u8-added-count').textContent = initialAdded;
+    document.getElementById('m3u8-footer-count').textContent = initialAdded;
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      clearStoredLinks();
+      document.getElementById('m3u8-added-count').textContent = '0';
+      document.getElementById('m3u8-footer-count').textContent = '0';
+      document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
+        row.classList.remove('m3u8-added');
+        const button = row.querySelector('.m3u8-btn-add');
+        if (button) {
+          button.textContent = 'Добавить';
+          button.disabled = false;
+        }
+      });
+    });
   }
 
   function addToPanel(url, title) {
@@ -180,6 +213,7 @@
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
     const addedCount = document.getElementById('m3u8-added-count');
+    const footerCount = document.getElementById('m3u8-footer-count');
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
 
@@ -194,7 +228,9 @@
       tr.classList.add('m3u8-added');
       btnAdd.textContent = 'Добавлено';
       btnAdd.disabled = true;
-      addedCount.textContent = String(getStoredLinks().length);
+      const total = String(getStoredLinks().length);
+      addedCount.textContent = total;
+      footerCount.textContent = total;
     };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
