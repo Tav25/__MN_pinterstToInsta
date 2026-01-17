@@ -159,7 +159,7 @@
         filter: grayscale(100%) brightness(.8);
       }
       .m3u8-thumb {
-        width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
+        width: 41px; height: auto; object-fit: cover; border-radius: 6px; cursor: pointer;
       }
     `;
     document.documentElement.appendChild(css);
@@ -181,6 +181,7 @@
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
+    const markAdded = () => tr.classList.add('m3u8-added');
     img.onload = () => {
       pendingM3u8Urls.delete(url);
       m3u8Urls.add(url);
@@ -202,15 +203,17 @@
     btnAdd.textContent = 'Добавить';
     btnAdd.className = 'm3u8-btn m3u8-btn-add';
     if (getStoredLinks().includes(url)) {
-      tr.classList.add('m3u8-added');
+      markAdded();
     }
-    btnAdd.onclick = () => {
+    const handleAdd = () => {
       if (addToStorage(url)) {
-        tr.classList.add('m3u8-added');
+        markAdded();
       }
     };
-    tdLink.appendChild(btnOpen);
+    btnAdd.onclick = handleAdd;
+    img.onclick = handleAdd;
     tdLink.appendChild(btnAdd);
+    tdLink.appendChild(btnOpen);
   }
 
   // ---------- привязка к карточке пина ----------
