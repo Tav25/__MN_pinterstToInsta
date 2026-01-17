@@ -21,6 +21,35 @@
   const pinLinks = new Map(); // pinKey -> url
   const m3u8Urls = new Set();
 
+  // localStorage для добавленных ссылок
+  function addToStorage(url) {
+    let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
+    if (!links.includes(url)) {
+      links.push(url);
+      localStorage.setItem('addedM3u8Links', JSON.stringify(links));
+    }
+  }
+
+  function getStoredLinks() {
+    return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
+  }
+
+  function downloadLinks() {
+    const links = getStoredLinks();
+    if (links.length === 0) {
+      alert('Нет добавленных ссылок для скачивания.');
+      return;
+    }
+    const text = links.join('\n');
+    const blob = new Blob([text], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'm3u8_links.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
     try {
@@ -52,7 +81,7 @@
     const panel = document.createElement('div');
     panel.id = 'm3u8-panel';
     panel.innerHTML = `
-      <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span></div>
+      <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span> <button id="download-btn" style="margin-left: 10px; font-size: 12px;">Скачать</button></div>
       <table id="m3u8-list"><tbody></tbody></table>
     `;
     const css = document.createElement('style');
@@ -92,6 +121,7 @@
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
+    document.getElementById('download-btn').addEventListener('click', downloadLinks);
   }
 
   function addToPanel(url, title) {
@@ -113,8 +143,15 @@
     a.rel = 'noopener';
     a.textContent = title ? `${title} — ${url}` : url;
     tdLink.appendChild(a);
+    const tdBtn = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'Добавить';
+    btn.style.cssText = 'font-size: 12px; padding: 2px 4px;';
+    btn.onclick = () => addToStorage(url);
+    tdBtn.appendChild(btn);
     tr.appendChild(tdImg);
     tr.appendChild(tdLink);
+    tr.appendChild(tdBtn);
     tbody.prepend(tr);
     count.textContent = String(m3u8Urls.size);
   }
@@ -171,7 +208,7 @@
     if (!chip) {
       chip = document.createElement('div');
       chip.className = 'm3u8-chip';
-      chip.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto; vertical-align:middle;"> 🎬 <a target="_blank" rel="noopener">Открыть .m3u8</a>`;
+      chip.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto; vertical-align:middle;"> 🎬 <a target="_blank" rel="noopener" href="${url}">Открыть .m3u8</a>`;
       // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
       container.appendChild(chip);
     } else {
