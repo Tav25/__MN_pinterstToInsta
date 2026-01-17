@@ -33,6 +33,15 @@
     }
   }
 
+  function getThumbUrl(m3u8Url) {
+    const parts = m3u8Url.split('/');
+    const lastParts = parts.slice(-4);
+    const folders = lastParts.slice(0, 3);
+    const filename = lastParts[3];
+    const id = filename.replace('.m3u8', '').replace(/\?.*/, '');
+    return `https://i.pinimg.com/videos/thumbnails/originals/${folders.join('/')}/${id}.0000000.jpg`;
+  }
+
   function log(...args) {
     //console.log('[CMFV]', ...args);
   }
@@ -44,7 +53,7 @@
     panel.id = 'm3u8-panel';
     panel.innerHTML = `
       <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span></div>
-      <div id="m3u8-list"></div>
+      <table id="m3u8-list"><tbody></tbody></table>
     `;
     const css = document.createElement('style');
     css.textContent = `
@@ -59,11 +68,19 @@
         position: sticky; top: 0; padding: 10px 12px; font-weight: 600;
         background: rgba(0,0,0,.35); border-bottom: 1px solid rgba(255,255,255,.1);
       }
-      #m3u8-list a {
-        display: block; padding: 8px 12px; text-decoration: none;
-        color: #bde0ff; word-break: break-all;
+      #m3u8-list {
+        width: 100%; border-collapse: collapse;
       }
-      #m3u8-list a:hover { background: rgba(255,255,255,.06); }
+      #m3u8-list td {
+        padding: 8px 12px; vertical-align: middle;
+      }
+      #m3u8-list td:first-child {
+        width: 35px; text-align: center;
+      }
+      #m3u8-list a {
+        text-decoration: none; color: #bde0ff; word-break: break-all;
+      }
+      #m3u8-list tr:hover { background: rgba(255,255,255,.06); }
       .m3u8-chip {
         display: inline-flex; align-items: center; gap: 6px;
         background: rgba(20,20,20,.85); color: #bde0ff;
@@ -79,23 +96,26 @@
 
   function addToPanel(url, title) {
     ensurePanel();
-    const list = document.getElementById('m3u8-list');
+    const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
     if (m3u8Urls.has(url)) return;
     m3u8Urls.add(url);
 
-    // извлекаем ID для превью
-    const parts = url.split('/');
-    const filename = parts[parts.length - 1];
-    const id = filename.replace('.m3u8', '').replace(/\?.*/, '');
-    const thumbUrl = `https://i.pinimg.com/videos/thumbnails/originals/${id}.0000000.jpg`;
+    const thumbUrl = getThumbUrl(url);
 
+    const tr = document.createElement('tr');
+    const tdImg = document.createElement('td');
+    tdImg.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto;">`;
+    const tdLink = document.createElement('td');
     const a = document.createElement('a');
     a.href = url;
     a.target = '_blank';
     a.rel = 'noopener';
-    a.innerHTML = `<img src="${thumbUrl}" style="width:10px; height:10px; vertical-align:middle; margin-right:5px;"> ${title ? `${title} — ${url}` : url}`;
-    list.prepend(a);
+    a.textContent = title ? `${title} — ${url}` : url;
+    tdLink.appendChild(a);
+    tr.appendChild(tdImg);
+    tr.appendChild(tdLink);
+    tbody.prepend(tr);
     count.textContent = String(m3u8Urls.size);
   }
 
@@ -144,17 +164,27 @@
     const pinKey = extractPinKey(container);
     if (!pinKey) return false;
 
+    const thumbUrl = getThumbUrl(url);
+
     // если уже добавляли чип к этому пину — обновим URL
     let chip = container.querySelector('.m3u8-chip');
     if (!chip) {
       chip = document.createElement('div');
       chip.className = 'm3u8-chip';
-      chip.innerHTML = `🎬 <a target="_blank" rel="noopener">Открыть .m3u8</a>`;
+      chip.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto; vertical-align:middle;"> 🎬 <a target="_blank" rel="noopener">Открыть .m3u8</a>`;
       // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
       container.appendChild(chip);
+    } else {
+      // обновим img src и href, на случай если URL изменился
+      const img = chip.querySelector('img');
+      if (img) {
+        img.src = thumbUrl;
+        img.style.width = '30px';
+        img.style.height = 'auto';
+      }
+      const link = chip.querySelector('a');
+      if (link) link.href = url;
     }
-    const link = chip.querySelector('a');
-    link.href = url;
 
     pinLinks.set(pinKey, url);
     return true;
