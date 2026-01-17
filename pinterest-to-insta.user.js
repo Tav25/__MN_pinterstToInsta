@@ -84,6 +84,7 @@
       <div id="m3u8-header">
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
+          <span class="m3u8-subcount">Добавлено <span id="m3u8-added-count">0</span></span>
         </div>
         <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
       </div>
@@ -109,6 +110,9 @@
       }
       .m3u8-title {
         display: flex; align-items: center; gap: 6px;
+      }
+      .m3u8-subcount {
+        font-weight: 500; opacity: .8;
       }
       .m3u8-badge {
         display: inline-flex; align-items: center; justify-content: center;
@@ -140,6 +144,9 @@
         font-size: 12px; cursor: pointer;
       }
       .m3u8-btn:hover { background: rgba(255,255,255,.18); }
+      .m3u8-btn:disabled {
+        cursor: default; opacity: .7;
+      }
       .m3u8-btn-primary {
         background: #2f7ef6; border-color: #2f7ef6;
       }
@@ -165,12 +172,14 @@
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
+    document.getElementById('m3u8-added-count').textContent = String(getStoredLinks().length);
   }
 
   function addToPanel(url, title) {
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
+    const addedCount = document.getElementById('m3u8-added-count');
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
 
@@ -181,7 +190,12 @@
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
-    const markAdded = () => tr.classList.add('m3u8-added');
+    const markAdded = () => {
+      tr.classList.add('m3u8-added');
+      btnAdd.textContent = 'Добавлено';
+      btnAdd.disabled = true;
+      addedCount.textContent = String(getStoredLinks().length);
+    };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
       m3u8Urls.add(url);
