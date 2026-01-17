@@ -88,7 +88,6 @@
       <div id="m3u8-header">
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
-          <span class="m3u8-subcount">Добавлено <span id="m3u8-added-count">0</span></span>
         </div>
         <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
       </div>
@@ -118,9 +117,6 @@
       }
       .m3u8-title {
         display: flex; align-items: center; gap: 6px;
-      }
-      .m3u8-subcount {
-        font-weight: 500; opacity: .8;
       }
       .m3u8-badge {
         display: inline-flex; align-items: center; justify-content: center;
@@ -191,11 +187,9 @@
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
     const initialAdded = String(getStoredLinks().length);
-    document.getElementById('m3u8-added-count').textContent = initialAdded;
     document.getElementById('m3u8-footer-count').textContent = initialAdded;
     document.getElementById('clear-btn').addEventListener('click', () => {
       clearStoredLinks();
-      document.getElementById('m3u8-added-count').textContent = '0';
       document.getElementById('m3u8-footer-count').textContent = '0';
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
@@ -212,7 +206,6 @@
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
-    const addedCount = document.getElementById('m3u8-added-count');
     const footerCount = document.getElementById('m3u8-footer-count');
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
@@ -229,7 +222,6 @@
       btnAdd.textContent = 'Добавлено';
       btnAdd.disabled = true;
       const total = String(getStoredLinks().length);
-      addedCount.textContent = total;
       footerCount.textContent = total;
     };
     img.onload = () => {
