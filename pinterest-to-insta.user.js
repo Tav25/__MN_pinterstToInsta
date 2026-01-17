@@ -18,38 +18,8 @@
 
   // ---------- утилиты ----------
   const seen = new Set();
-  const pinLinks = new Map(); // pinKey -> url
   const m3u8Urls = new Set();
   const pendingM3u8Urls = new Set();
-
-  // localStorage для добавленных ссылок
-  function addToStorage(url) {
-    let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
-    if (!links.includes(url)) {
-      links.push(url);
-      localStorage.setItem('addedM3u8Links', JSON.stringify(links));
-    }
-  }
-
-  function getStoredLinks() {
-    return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
-  }
-
-  function downloadLinks() {
-    const links = getStoredLinks();
-    if (links.length === 0) {
-      alert('Нет добавленных ссылок для скачивания.');
-      return;
-    }
-    const text = links.join('\n');
-    const blob = new Blob([text], {type: 'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'm3u8_links.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
 
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
@@ -86,7 +56,6 @@
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
-        <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
       </div>
       <div id="m3u8-body">
         <table id="m3u8-list"><tbody></tbody></table>
@@ -133,44 +102,13 @@
       #m3u8-list td:last-child {
         display: flex; align-items: center; gap: 8px;
       }
-      #m3u8-list a {
-        text-decoration: none; color: #bde0ff; word-break: break-word;
-      }
       #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
-      .m3u8-btn {
-        border: 1px solid rgba(255,255,255,.2);
-        background: rgba(255,255,255,.08);
-        color: #fff; border-radius: 6px; padding: 4px 8px;
-        font-size: 12px; cursor: pointer;
-      }
-      .m3u8-btn:hover { background: rgba(255,255,255,.18); }
-      .m3u8-btn-primary {
-        background: #2f7ef6; border-color: #2f7ef6;
-      }
-      .m3u8-btn-primary:hover { background: #1f6fe8; }
-      .m3u8-btn-open {
-        background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
-      }
-      .m3u8-btn-open:hover { background: rgba(255,255,255,.26); }
-      .m3u8-btn-add {
-        background: #2bb673; border-color: #2bb673;
-      }
-      .m3u8-btn-add:hover { background: #1fa463; }
-      .m3u8-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(20,20,20,.85); color: #bde0ff;
-        border: 1px solid rgba(189,224,255,.25);
-        padding: 6px 8px; margin-top: 6px; border-radius: 6px; font-size: 12px;
-      }
-      .m3u8-chip a { color: #bde0ff; text-decoration: none; }
-      .m3u8-chip a:hover { text-decoration: underline; }
       .m3u8-thumb {
         width: 34px; height: 34px; object-fit: cover; border-radius: 6px;
       }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
-    document.getElementById('download-btn').addEventListener('click', downloadLinks);
   }
 
   function addToPanel(url, title) {
@@ -200,16 +138,9 @@
       pendingM3u8Urls.delete(url);
     };
     const tdLink = document.createElement('td');
-    const btnOpen = document.createElement('button');
-    btnOpen.textContent = 'Открыть';
-    btnOpen.className = 'm3u8-btn m3u8-btn-open';
-    btnOpen.onclick = () => window.open(url, '_blank');
-    const btnAdd = document.createElement('button');
-    btnAdd.textContent = 'Добавить';
-    btnAdd.className = 'm3u8-btn m3u8-btn-add';
-    btnAdd.onclick = () => addToStorage(url);
-    tdLink.appendChild(btnOpen);
-    tdLink.appendChild(btnAdd);
+    if (title) {
+      tdLink.textContent = title;
+    }
   }
 
   // ---------- привязка к карточке пина ----------
@@ -252,33 +183,6 @@
     return container.id ? `node#${container.id}` : `node@${(container.className||'').toString().slice(0,80)}`;
   }
 
-  function attachChip(container, url) {
-    if (!container) return false;
-    const pinKey = extractPinKey(container);
-    if (!pinKey) return false;
-
-    const thumbUrl = getThumbUrl(url);
-
-    // если уже добавляли чип к этому пину — обновим URL
-    let chip = container.querySelector('.m3u8-chip');
-    if (!chip) {
-      chip = document.createElement('div');
-      chip.className = 'm3u8-chip';
-      chip.innerHTML = `<img src="${thumbUrl}" class="m3u8-thumb"> 🎬 <a target="_blank" rel="noopener" href="${url}">Открыть .m3u8</a>`;
-      // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
-      container.appendChild(chip);
-    } else {
-      // обновим img src и href, на случай если URL изменился
-      const img = chip.querySelector('img');
-      if (img) img.src = thumbUrl;
-      const link = chip.querySelector('a');
-      if (link) link.href = url;
-    }
-
-    pinLinks.set(pinKey, url);
-    return true;
-  }
-
   function handleFoundUrl(rawUrl) {
     const url = normalizeUrl(rawUrl);
     if (seen.has(url)) return;
@@ -286,15 +190,12 @@
     if (/0w\.m3u8(\?|$)|_audio\.m3u8(\?|$)/i.test(url)) return;
     seen.add(url);
 
-    // 1) пробуем привязать к карточке под курсором
     const hovered = getHoveredElement();
     const pin = findPinContainer(hovered || document.activeElement);
-    const attached = attachChip(pin, url);
 
-    // 2) в любом случае — добавим в плавающую панель
     const title = pin ? (pin.getAttribute('aria-label') || pin.textContent?.trim().slice(0,60)) : '';
     addToPanel(url, title);
-    log('M3U8:', url, attached ? 'attached' : 'panel-only');
+    log('M3U8:', url, 'panel-only');
   }
 
   // ---------- перехват fetch / XHR ----------
