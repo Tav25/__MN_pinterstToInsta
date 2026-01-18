@@ -189,17 +189,10 @@
         background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
       }
       .m3u8-btn-open:hover { background: rgba(255,255,255,.26); }
-      .m3u8-btn-add {
-        background: #2bb673; border-color: #2bb673;
-      }
-      .m3u8-btn-add:hover { background: #1fa463; }
       .m3u8-btn-clear {
         background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22);
       }
       .m3u8-btn-clear:hover { background: rgba(255,255,255,.22); }
-      .m3u8-added .m3u8-btn-add {
-        background: #3a3a3a; border-color: #4b4b4b; color: #d7d7d7;
-      }
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
       }
@@ -217,11 +210,6 @@
       document.getElementById('m3u8-footer-count').textContent = '0';
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
-        const button = row.querySelector('.m3u8-btn-add');
-        if (button) {
-          button.textContent = 'Добавить';
-          button.disabled = false;
-        }
       });
     });
   }
@@ -243,8 +231,6 @@
     img.className = 'm3u8-thumb';
     const markAdded = () => {
       tr.classList.add('m3u8-added');
-      btnAdd.textContent = 'Добавлено';
-      btnAdd.disabled = true;
       const total = String(getStoredLinks().length);
       footerCount.textContent = total;
     };
@@ -262,12 +248,9 @@
     };
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
-    btnOpen.textContent = 'Открыть';
+    btnOpen.textContent = '👁️';
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => window.open(url, '_blank');
-    const btnAdd = document.createElement('button');
-    btnAdd.textContent = 'Добавить';
-    btnAdd.className = 'm3u8-btn m3u8-btn-add';
     if (getStoredLinks().includes(url)) {
       markAdded();
     }
@@ -276,9 +259,7 @@
         markAdded();
       }
     };
-    btnAdd.onclick = handleAdd;
     img.onclick = handleAdd;
-    tdLink.appendChild(btnAdd);
     tdLink.appendChild(btnOpen);
   }
 
