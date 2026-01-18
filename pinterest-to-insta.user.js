@@ -135,7 +135,7 @@
     css.textContent = `
       #m3u8-panel {
         position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
-        width: 300px; height: calc(100vh - 24px);
+        width: 150px; height: calc(100vh - 24px);
         background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
