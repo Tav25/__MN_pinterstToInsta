@@ -113,7 +113,7 @@
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
-        <button id="download-btn" class="m3u8-btn m3u8-btn-primary" aria-label="Скачать">
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-download" aria-label="Скачать">
           <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 3v12"></path>
@@ -187,6 +187,7 @@
         padding: 4px 10px;
         font-size: 12px; font-weight: 600; cursor: pointer;
         letter-spacing: .2px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       }
       .m3u8-btn:hover { background: rgba(55,65,81,.85); }
       .m3u8-btn:disabled {
@@ -196,6 +197,10 @@
         background: #3b82f6; border-color: #3b82f6;
       }
       .m3u8-btn-primary:hover { background: #2563eb; }
+      .m3u8-btn-download {
+        flex-direction: column; align-items: center; gap: 2px;
+        padding: 6px 8px;
+      }
       .m3u8-btn-open {
         background: rgba(31,41,55,.9); border-color: rgba(255,255,255,.08);
         padding: 4px 9px; font-size: 13px;
@@ -205,7 +210,7 @@
         width: 18px; height: 18px; display: block;
       }
       .m3u8-btn-count {
-        margin-left: 6px; font-size: 12px; font-weight: 700;
+        font-size: 11px; font-weight: 700; line-height: 1;
       }
       .m3u8-btn-clear {
         background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
