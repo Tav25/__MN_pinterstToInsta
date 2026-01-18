@@ -18,29 +18,57 @@
 
   // ---------- утилиты ----------
   const seen = new Set();
-  const pinLinks = new Map(); // pinKey -> url
   const m3u8Urls = new Set();
+  const pendingM3u8Urls = new Set();
 
   // localStorage для добавленных ссылок
   function addToStorage(url) {
     let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
-    if (!links.includes(url)) {
-      links.push(url);
-      localStorage.setItem('addedM3u8Links', JSON.stringify(links));
-    }
+    if (links.includes(url)) return false;
+    links.push(url);
+    localStorage.setItem('addedM3u8Links', JSON.stringify(links));
+    return true;
   }
 
   function getStoredLinks() {
     return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
   }
 
+  function clearStoredLinks() {
+    localStorage.removeItem('addedM3u8Links');
+  }
+
+  function deriveCmfLinks(link) {
+    try {
+      const url = new URL(link, location.href);
+      if (!/\.m3u8$/i.test(url.pathname)) return [];
+      const base = url.pathname.replace(/\.m3u8$/i, '');
+      const audioUrl = new URL(url.toString());
+      const videoUrl = new URL(url.toString());
+      audioUrl.pathname = `${base}_audio.cmfa`;
+      videoUrl.pathname = `${base}_720w.cmfv`;
+      return [audioUrl.toString(), videoUrl.toString()];
+    } catch (e) {
+      return [];
+    }
+  }
+
   function downloadLinks() {
     const links = getStoredLinks();
-    if (links.length === 0) {
+    const downloadSet = new Set();
+    links.forEach(link => {
+      if (/(_audio\.cmfa|_720w\.cmfv)(\?|$)/i.test(link)) {
+        downloadSet.add(link);
+        return;
+      }
+      deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
+    });
+    const downloadLinks = Array.from(downloadSet);
+    if (downloadLinks.length === 0) {
       alert('Нет добавленных ссылок для скачивания.');
       return;
     }
-    const text = links.join('\n');
+    const text = downloadLinks.join('\n');
     const blob = new Blob([text], {type: 'text/plain'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -81,55 +109,144 @@
     const panel = document.createElement('div');
     panel.id = 'm3u8-panel';
     panel.innerHTML = `
-      <div id="m3u8-header">M3U8 найдено <span id="m3u8-count">0</span> <button id="download-btn" style="margin-left: 10px; font-size: 12px;">Скачать</button></div>
-      <table id="m3u8-list"><tbody></tbody></table>
+      <div id="m3u8-header">
+        <div class="m3u8-title">
+          M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
+        </div>
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-download" aria-label="Скачать">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12"></path>
+            <path d="M7 10l5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+          <span id="m3u8-download-count" class="m3u8-btn-count">0</span>
+        </button>
+      </div>
+      <div id="m3u8-body">
+        <table id="m3u8-list"><tbody></tbody></table>
+      </div>
+      <div id="m3u8-footer">
+        <span>Добавлено <span id="m3u8-footer-count">0</span></span>
+        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Очистить</button>
+      </div>
     `;
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
-        position: fixed; right: 12px; bottom: 12px; z-index: 99999;
-        width: 320px; max-height: 45vh; overflow: auto;
-        background: rgba(20,20,20,.9); color: #fff; border-radius: 8px;
-        backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
+        width: 300px; height: calc(100vh - 24px);
+        background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
+        backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
+        overflow: hidden;
       }
       #m3u8-header {
-        position: sticky; top: 0; padding: 10px 12px; font-weight: 600;
-        background: rgba(0,0,0,.35); border-bottom: 1px solid rgba(255,255,255,.1);
+        position: sticky; top: 0; z-index: 1;
+        padding: 10px 12px; font-weight: 600;
+        background: rgba(0,0,0,.4); border-bottom: 1px solid rgba(255,255,255,.08);
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      }
+      .m3u8-title {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .m3u8-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 20px; padding: 2px 6px; border-radius: 999px;
+        background: rgba(255,255,255,.12); font-weight: 600;
+      }
+      #m3u8-body {
+        height: calc(100% - 88px);
+        overflow: auto;
+      }
+      #m3u8-footer {
+        position: sticky; bottom: 0; z-index: 1;
+        padding: 8px 12px; font-weight: 500;
+        background: rgba(0,0,0,.35); border-top: 1px solid rgba(255,255,255,.08);
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
       #m3u8-list {
         width: 100%; border-collapse: collapse;
       }
+      #m3u8-list tr { border-bottom: 1px solid rgba(255,255,255,.06); }
       #m3u8-list td {
         padding: 8px 12px; vertical-align: middle;
       }
       #m3u8-list td:first-child {
-        width: 35px; text-align: center;
+        width: 60px; text-align: center;
       }
-      #m3u8-list a {
-        text-decoration: none; color: #bde0ff; word-break: break-all;
+      #m3u8-list td:last-child {
+        display: flex; align-items: center; gap: 8px;
       }
-      #m3u8-list tr:hover { background: rgba(255,255,255,.06); }
-      .m3u8-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(20,20,20,.85); color: #bde0ff;
-        border: 1px solid rgba(189,224,255,.25);
-        padding: 6px 8px; margin-top: 6px; border-radius: 6px; font-size: 12px;
+      #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
+      .m3u8-btn {
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(31,41,55,.7);
+        color: #f9fafb;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        letter-spacing: .2px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       }
-      .m3u8-chip a { color: #bde0ff; text-decoration: none; }
-      .m3u8-chip a:hover { text-decoration: underline; }
+      .m3u8-btn:hover { background: rgba(55,65,81,.85); }
+      .m3u8-btn:disabled {
+        cursor: default; opacity: .7;
+      }
+      .m3u8-btn-primary {
+        background: #3b82f6; border-color: #3b82f6;
+      }
+      .m3u8-btn-primary:hover { background: #2563eb; }
+      .m3u8-btn-download {
+        flex-direction: row; align-items: center; gap: 3px;
+        padding: 4px;
+        width: 40px; justify-content: center;
+      }
+      .m3u8-btn-open {
+        background: rgba(31,41,55,.9); border-color: rgba(255,255,255,.08);
+        padding: 4px 9px; font-size: 13px;
+      }
+      .m3u8-btn-open:hover { background: rgba(55,65,81,.95); }
+      .m3u8-icon {
+        width: 18px; height: 18px; display: block;
+      }
+      .m3u8-btn-count {
+        font-size: 9px; font-weight: 700; line-height: 1;
+      }
+      .m3u8-btn-clear {
+        background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
+      }
+      .m3u8-btn-clear:hover { background: rgba(107,114,128,.7); }
+      .m3u8-added .m3u8-thumb {
+        filter: grayscale(100%) brightness(.8);
+      }
+      .m3u8-thumb {
+        width: 41px; height: auto; object-fit: cover; border-radius: 6px; cursor: pointer;
+      }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
+    const initialAdded = String(getStoredLinks().length);
+    document.getElementById('m3u8-download-count').textContent = initialAdded;
+    document.getElementById('m3u8-footer-count').textContent = initialAdded;
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      clearStoredLinks();
+      document.getElementById('m3u8-download-count').textContent = '0';
+      document.getElementById('m3u8-footer-count').textContent = '0';
+      document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
+        row.classList.remove('m3u8-added');
+      });
+    });
   }
 
   function addToPanel(url, title) {
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
-    if (m3u8Urls.has(url)) return;
-    m3u8Urls.add(url);
+    const footerCount = document.getElementById('m3u8-footer-count');
+    if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
+    pendingM3u8Urls.add(url);
 
     const thumbUrl = getThumbUrl(url);
 
@@ -137,24 +254,47 @@
     const tdImg = document.createElement('td');
     const img = document.createElement('img');
     img.src = thumbUrl;
-    img.style.cssText = 'width:30px; height:auto; vertical-align:middle;';
-    tdImg.appendChild(img);
-    const btnAdd = document.createElement('button');
-    btnAdd.textContent = 'Добавить';
-    btnAdd.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-left: 6px;';
-    btnAdd.onclick = () => addToStorage(url);
-    tdImg.appendChild(btnAdd);
+    img.className = 'm3u8-thumb';
+    const markAdded = () => {
+      tr.classList.add('m3u8-added');
+      const total = String(getStoredLinks().length);
+      footerCount.textContent = total;
+      document.getElementById('m3u8-download-count').textContent = total;
+    };
+    img.onload = () => {
+      pendingM3u8Urls.delete(url);
+      m3u8Urls.add(url);
+      tdImg.appendChild(img);
+      tr.appendChild(tdImg);
+      tr.appendChild(tdLink);
+      tbody.prepend(tr);
+      count.textContent = String(m3u8Urls.size);
+    };
+    img.onerror = () => {
+      pendingM3u8Urls.delete(url);
+    };
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
-    btnOpen.textContent = 'Открыть';
-    btnOpen.style.cssText = 'font-size: 12px; padding: 2px 4px; margin-right: 6px;';
+    btnOpen.innerHTML = `
+      <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    `;
+    btnOpen.setAttribute('aria-label', 'Открыть');
+    btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => window.open(url, '_blank');
+    if (getStoredLinks().includes(url)) {
+      markAdded();
+    }
+    const handleAdd = () => {
+      if (addToStorage(url)) {
+        markAdded();
+      }
+    };
+    img.onclick = handleAdd;
     tdLink.appendChild(btnOpen);
-    tdLink.appendChild(document.createTextNode(title ? `${title} — ${url}` : url));
-    tr.appendChild(tdImg);
-    tr.appendChild(tdLink);
-    tbody.prepend(tr);
-    count.textContent = String(m3u8Urls.size);
   }
 
   // ---------- привязка к карточке пина ----------
@@ -197,37 +337,6 @@
     return container.id ? `node#${container.id}` : `node@${(container.className||'').toString().slice(0,80)}`;
   }
 
-  function attachChip(container, url) {
-    if (!container) return false;
-    const pinKey = extractPinKey(container);
-    if (!pinKey) return false;
-
-    const thumbUrl = getThumbUrl(url);
-
-    // если уже добавляли чип к этому пину — обновим URL
-    let chip = container.querySelector('.m3u8-chip');
-    if (!chip) {
-      chip = document.createElement('div');
-      chip.className = 'm3u8-chip';
-      chip.innerHTML = `<img src="${thumbUrl}" style="width:30px; height:auto; vertical-align:middle;"> 🎬 <a target="_blank" rel="noopener" href="${url}">Открыть .m3u8</a>`;
-      // вставим ближе к низу карточки; где «безопаснее» — перед концом контейнера
-      container.appendChild(chip);
-    } else {
-      // обновим img src и href, на случай если URL изменился
-      const img = chip.querySelector('img');
-      if (img) {
-        img.src = thumbUrl;
-        img.style.width = '30px';
-        img.style.height = 'auto';
-      }
-      const link = chip.querySelector('a');
-      if (link) link.href = url;
-    }
-
-    pinLinks.set(pinKey, url);
-    return true;
-  }
-
   function handleFoundUrl(rawUrl) {
     const url = normalizeUrl(rawUrl);
     if (seen.has(url)) return;
@@ -235,15 +344,12 @@
     if (/0w\.m3u8(\?|$)|_audio\.m3u8(\?|$)/i.test(url)) return;
     seen.add(url);
 
-    // 1) пробуем привязать к карточке под курсором
     const hovered = getHoveredElement();
     const pin = findPinContainer(hovered || document.activeElement);
-    const attached = attachChip(pin, url);
 
-    // 2) в любом случае — добавим в плавающую панель
     const title = pin ? (pin.getAttribute('aria-label') || pin.textContent?.trim().slice(0,60)) : '';
     addToPanel(url, title);
-    log('M3U8:', url, attached ? 'attached' : 'panel-only');
+    log('M3U8:', url, 'panel-only');
   }
 
   // ---------- перехват fetch / XHR ----------
