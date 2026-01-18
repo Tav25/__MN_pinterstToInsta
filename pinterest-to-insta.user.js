@@ -248,7 +248,7 @@
     };
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
-    btnOpen.textContent = '👁️';
+    btnOpen.textContent = '👁';
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => window.open(url, '_blank');
     if (getStoredLinks().includes(url)) {
