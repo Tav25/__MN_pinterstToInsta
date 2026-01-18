@@ -193,6 +193,9 @@
         padding: 4px 9px; font-size: 13px;
       }
       .m3u8-btn-open:hover { background: rgba(55,65,81,.95); }
+      .m3u8-icon {
+        width: 18px; height: 18px; display: block;
+      }
       .m3u8-btn-clear {
         background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
       }
@@ -252,7 +255,14 @@
     };
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
-    btnOpen.textContent = '👁';
+    btnOpen.innerHTML = `
+      <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    `;
+    btnOpen.setAttribute('aria-label', 'Открыть');
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => window.open(url, '_blank');
     if (getStoredLinks().includes(url)) {
