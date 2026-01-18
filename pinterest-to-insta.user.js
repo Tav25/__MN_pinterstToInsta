@@ -113,7 +113,14 @@
         <div class="m3u8-title">
           M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
-        <button id="download-btn" class="m3u8-btn m3u8-btn-primary">Скачать</button>
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary" aria-label="Скачать">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12"></path>
+            <path d="M7 10l5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+        </button>
       </div>
       <div id="m3u8-body">
         <table id="m3u8-list"><tbody></tbody></table>
