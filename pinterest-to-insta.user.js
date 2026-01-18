@@ -198,8 +198,9 @@
       }
       .m3u8-btn-primary:hover { background: #2563eb; }
       .m3u8-btn-download {
-        flex-direction: column; align-items: center; gap: 2px;
-        padding: 6px 8px;
+        flex-direction: row; align-items: center; gap: 3px;
+        padding: 4px;
+        width: 40px; justify-content: center;
       }
       .m3u8-btn-open {
         background: rgba(31,41,55,.9); border-color: rgba(255,255,255,.08);
@@ -210,7 +211,7 @@
         width: 18px; height: 18px; display: block;
       }
       .m3u8-btn-count {
-        font-size: 11px; font-weight: 700; line-height: 1;
+        font-size: 9px; font-weight: 700; line-height: 1;
       }
       .m3u8-btn-clear {
         background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
