@@ -120,6 +120,7 @@
             <path d="M7 10l5 5 5-5"></path>
             <path d="M5 21h14"></path>
           </svg>
+          <span id="m3u8-download-count" class="m3u8-btn-count">0</span>
         </button>
       </div>
       <div id="m3u8-body">
@@ -203,6 +204,9 @@
       .m3u8-icon {
         width: 18px; height: 18px; display: block;
       }
+      .m3u8-btn-count {
+        margin-left: 6px; font-size: 12px; font-weight: 700;
+      }
       .m3u8-btn-clear {
         background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
       }
@@ -218,9 +222,11 @@
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
     const initialAdded = String(getStoredLinks().length);
+    document.getElementById('m3u8-download-count').textContent = initialAdded;
     document.getElementById('m3u8-footer-count').textContent = initialAdded;
     document.getElementById('clear-btn').addEventListener('click', () => {
       clearStoredLinks();
+      document.getElementById('m3u8-download-count').textContent = '0';
       document.getElementById('m3u8-footer-count').textContent = '0';
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
@@ -247,6 +253,7 @@
       tr.classList.add('m3u8-added');
       const total = String(getStoredLinks().length);
       footerCount.textContent = total;
+      document.getElementById('m3u8-download-count').textContent = total;
     };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
