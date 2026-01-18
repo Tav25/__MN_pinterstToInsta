@@ -128,14 +128,22 @@
       </div>
       <div id="m3u8-footer">
         <span>Добавлено <span id="m3u8-footer-count">0</span></span>
-        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Очистить</button>
+        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 14h10l1-14"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
       </div>
     `;
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
         position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
-        width: 300px; height: calc(100vh - 24px);
+        width: 150px; height: calc(100vh - 24px);
         background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
@@ -214,9 +222,9 @@
         font-size: 9px; font-weight: 700; line-height: 1;
       }
       .m3u8-btn-clear {
-        background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
+        background: #f97316; border-color: #f97316; color: #111827;
       }
-      .m3u8-btn-clear:hover { background: rgba(107,114,128,.7); }
+      .m3u8-btn-clear:hover { background: #ea580c; border-color: #ea580c; }
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
       }
