@@ -34,6 +34,14 @@
     return JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
   }
 
+  function removeFromStorage(url) {
+    const links = getStoredLinks();
+    const nextLinks = links.filter(link => link !== url);
+    if (nextLinks.length === links.length) return false;
+    localStorage.setItem('addedM3u8Links', JSON.stringify(nextLinks));
+    return true;
+  }
+
   function clearStoredLinks() {
     localStorage.removeItem('addedM3u8Links');
   }
@@ -263,11 +271,18 @@
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
-    const markAdded = () => {
-      tr.classList.add('m3u8-added');
+    const updateCounts = () => {
       const total = String(getStoredLinks().length);
       footerCount.textContent = total;
       document.getElementById('m3u8-download-count').textContent = total;
+    };
+    const markAdded = () => {
+      tr.classList.add('m3u8-added');
+      updateCounts();
+    };
+    const markRemoved = () => {
+      tr.classList.remove('m3u8-added');
+      updateCounts();
     };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
@@ -296,12 +311,18 @@
     if (getStoredLinks().includes(url)) {
       markAdded();
     }
-    const handleAdd = () => {
+    const handleToggle = () => {
+      if (getStoredLinks().includes(url)) {
+        if (removeFromStorage(url)) {
+          markRemoved();
+        }
+        return;
+      }
       if (addToStorage(url)) {
         markAdded();
       }
     };
-    img.onclick = handleAdd;
+    img.onclick = handleToggle;
     tdLink.appendChild(btnOpen);
   }
 
