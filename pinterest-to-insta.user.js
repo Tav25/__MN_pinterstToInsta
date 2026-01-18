@@ -172,27 +172,31 @@
       }
       #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
       .m3u8-btn {
-        border: 1px solid rgba(255,255,255,.2);
-        background: rgba(255,255,255,.08);
-        color: #fff; border-radius: 6px; padding: 4px 8px;
-        font-size: 12px; cursor: pointer;
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(31,41,55,.7);
+        color: #f9fafb;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        letter-spacing: .2px;
       }
-      .m3u8-btn:hover { background: rgba(255,255,255,.18); }
+      .m3u8-btn:hover { background: rgba(55,65,81,.85); }
       .m3u8-btn:disabled {
         cursor: default; opacity: .7;
       }
       .m3u8-btn-primary {
-        background: #2f7ef6; border-color: #2f7ef6;
+        background: #3b82f6; border-color: #3b82f6;
       }
-      .m3u8-btn-primary:hover { background: #1f6fe8; }
+      .m3u8-btn-primary:hover { background: #2563eb; }
       .m3u8-btn-open {
-        background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
+        background: rgba(31,41,55,.9); border-color: rgba(255,255,255,.08);
+        padding: 4px 9px; font-size: 13px;
       }
-      .m3u8-btn-open:hover { background: rgba(255,255,255,.26); }
+      .m3u8-btn-open:hover { background: rgba(55,65,81,.95); }
       .m3u8-btn-clear {
-        background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22);
+        background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
       }
-      .m3u8-btn-clear:hover { background: rgba(255,255,255,.22); }
+      .m3u8-btn-clear:hover { background: rgba(107,114,128,.7); }
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
       }
