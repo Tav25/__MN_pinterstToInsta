@@ -128,7 +128,7 @@
       </div>
       <div id="m3u8-footer">
         <span>Добавлено <span id="m3u8-footer-count">0</span></span>
-        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Очистить</button>
+        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Замени на мусорную корзину</button>
       </div>
     `;
     const css = document.createElement('style');
@@ -214,9 +214,9 @@
         font-size: 9px; font-weight: 700; line-height: 1;
       }
       .m3u8-btn-clear {
-        background: rgba(107,114,128,.5); border-color: rgba(255,255,255,.08);
+        background: #f97316; border-color: #f97316; color: #111827;
       }
-      .m3u8-btn-clear:hover { background: rgba(107,114,128,.7); }
+      .m3u8-btn-clear:hover { background: #ea580c; border-color: #ea580c; }
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
       }
