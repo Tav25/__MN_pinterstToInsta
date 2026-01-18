@@ -128,7 +128,15 @@
       </div>
       <div id="m3u8-footer">
         <span>Добавлено <span id="m3u8-footer-count">0</span></span>
-        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear">Замени на мусорную корзину</button>
+        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 14h10l1-14"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
       </div>
     `;
     const css = document.createElement('style');
