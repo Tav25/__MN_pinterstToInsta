@@ -213,12 +213,7 @@
       }
       #m3u8-list tr {
         display: flex; flex-direction: column; align-items: center; gap: 6px;
-        padding: 8px; border-radius: 10px;
-        background: rgba(15,23,42,.55); border: 1px solid rgba(255,255,255,.08);
-        width: 120px;
-      }
-      #m3u8-panel.m3u8-panel-expanded #m3u8-list tr {
-        width: 180px;
+        padding: 0;
       }
       #m3u8-list td {
         padding: 0; vertical-align: middle;
@@ -226,7 +221,9 @@
       #m3u8-list td:last-child {
         display: flex; align-items: center; justify-content: center; gap: 8px;
       }
-      #m3u8-list tr:hover { background: rgba(255,255,255,.08); }
+      #m3u8-list tr:hover .m3u8-thumb {
+        border-color: rgba(255,255,255,.35);
+      }
       .m3u8-btn {
         border: 1px solid rgba(255,255,255,.08);
         background: rgba(31,41,55,.7);
@@ -274,7 +271,9 @@
         filter: grayscale(100%) brightness(.8);
       }
       .m3u8-thumb {
-        width: 41px; height: auto; object-fit: cover; border-radius: 6px; cursor: pointer;
+        width: 41px; height: auto; object-fit: cover; border-radius: 8px; cursor: pointer;
+        border: 1px solid rgba(255,255,255,.18);
+        box-shadow: 0 6px 14px rgba(0,0,0,.25);
       }
       #m3u8-panel.m3u8-panel-expanded .m3u8-thumb {
         width: 82px;
