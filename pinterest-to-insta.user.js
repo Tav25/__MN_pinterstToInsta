@@ -54,7 +54,11 @@
       const videoUrl = new URL(url.toString());
       let videoPath = `${base}_720w.mp4`;
       if (!/\/expMp4\//i.test(videoPath)) {
-        videoPath = videoPath.replace('/videos/', '/videos/iht/expMp4/');
+        if (/\/videos\/iht\/hls\//i.test(videoPath)) {
+          videoPath = videoPath.replace('/videos/iht/hls/', '/videos/iht/expMp4/');
+        } else {
+          videoPath = videoPath.replace('/videos/', '/videos/iht/expMp4/');
+        }
       }
       videoUrl.pathname = videoPath;
       return [videoUrl.toString()];
