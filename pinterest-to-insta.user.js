@@ -206,22 +206,27 @@
         display: inline-flex; align-items: center; gap: 6px;
       }
       #m3u8-list {
-        width: 100%; border-collapse: collapse;
+        width: auto; border-collapse: collapse;
       }
-      #m3u8-list tr { border-bottom: 1px solid rgba(255,255,255,.06); }
-      #m3u8-list td {
-        padding: 8px 12px; vertical-align: middle;
+      #m3u8-list tbody {
+        display: flex; flex-wrap: wrap; gap: 10px; padding: 10px;
       }
-      #m3u8-list td:first-child {
-        width: 60px; text-align: center;
-      }
-      #m3u8-panel.m3u8-panel-expanded #m3u8-list td:first-child {
+      #m3u8-list tr {
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        padding: 8px; border-radius: 10px;
+        background: rgba(15,23,42,.55); border: 1px solid rgba(255,255,255,.08);
         width: 120px;
       }
-      #m3u8-list td:last-child {
-        display: flex; align-items: center; gap: 8px;
+      #m3u8-panel.m3u8-panel-expanded #m3u8-list tr {
+        width: 180px;
       }
-      #m3u8-list tr:hover { background: rgba(255,255,255,.05); }
+      #m3u8-list td {
+        padding: 0; vertical-align: middle;
+      }
+      #m3u8-list td:last-child {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+      }
+      #m3u8-list tr:hover { background: rgba(255,255,255,.08); }
       .m3u8-btn {
         border: 1px solid rgba(255,255,255,.08);
         background: rgba(31,41,55,.7);
