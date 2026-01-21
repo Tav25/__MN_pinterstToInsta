@@ -314,7 +314,12 @@
     `;
     btnOpen.setAttribute('aria-label', 'Открыть');
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
-    btnOpen.onclick = () => window.open(previewUrl, '_blank');
+    btnOpen.onclick = () => {
+      const a = document.createElement('a');
+      a.href = previewUrl;
+      a.download = '';
+      a.click();
+    };
     if (getStoredLinks().includes(url)) {
       markAdded();
     }
