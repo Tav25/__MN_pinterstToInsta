@@ -271,6 +271,7 @@
     pendingM3u8Urls.add(url);
 
     const thumbUrl = getThumbUrl(url);
+    const previewUrl = deriveCmfLinks(url)[0] || url;
 
     const tr = document.createElement('tr');
     const tdImg = document.createElement('td');
@@ -313,7 +314,7 @@
     `;
     btnOpen.setAttribute('aria-label', 'Открыть');
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
-    btnOpen.onclick = () => window.open(url, '_blank');
+    btnOpen.onclick = () => window.open(previewUrl, '_blank');
     if (getStoredLinks().includes(url)) {
       markAdded();
     }
