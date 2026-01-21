@@ -51,11 +51,13 @@
       const url = new URL(link, location.href);
       if (!/\.m3u8$/i.test(url.pathname)) return [];
       const base = url.pathname.replace(/\.m3u8$/i, '');
-      const audioUrl = new URL(url.toString());
       const videoUrl = new URL(url.toString());
-      audioUrl.pathname = `${base}_audio.cmfa`;
-      videoUrl.pathname = `${base}_720w.cmfv`;
-      return [audioUrl.toString(), videoUrl.toString()];
+      let videoPath = `${base}_720w.mp4`;
+      if (!/\/expMp4\//i.test(videoPath)) {
+        videoPath = videoPath.replace('/videos/', '/videos/iht/expMp4/');
+      }
+      videoUrl.pathname = videoPath;
+      return [videoUrl.toString()];
     } catch (e) {
       return [];
     }
@@ -65,7 +67,7 @@
     const links = getStoredLinks();
     const downloadSet = new Set();
     links.forEach(link => {
-      if (/(_audio\.cmfa|_720w\.cmfv)(\?|$)/i.test(link)) {
+      if (/(_720w\.mp4)(\?|$)/i.test(link)) {
         downloadSet.add(link);
         return;
       }
