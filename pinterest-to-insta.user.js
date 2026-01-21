@@ -142,15 +142,25 @@
       </div>
       <div id="m3u8-footer">
         <span>Добавлено <span id="m3u8-footer-count">0</span></span>
-        <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
-          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18"></path>
-            <path d="M8 6V4h8v2"></path>
-            <path d="M6 6l1 14h10l1-14"></path>
-            <path d="M10 11v6"></path>
-            <path d="M14 11v6"></path>
-          </svg>
-        </button>
+        <div class="m3u8-footer-actions">
+          <button id="expand-btn" class="m3u8-btn m3u8-btn-expand" aria-label="Развернуть">
+            <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 10V4h6"></path>
+              <path d="M20 14v6h-6"></path>
+              <path d="M4 4l7 7"></path>
+              <path d="M20 20l-7-7"></path>
+            </svg>
+          </button>
+          <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
+            <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M6 6l1 14h10l1-14"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     `;
     const css = document.createElement('style');
@@ -162,6 +172,11 @@
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
+      }
+      #m3u8-panel.m3u8-panel-expanded {
+        top: 0; right: 0; bottom: 0; left: 0;
+        width: 100vw; height: 100vh;
+        border-radius: 0;
       }
       #m3u8-header {
         position: sticky; top: 0; z-index: 1;
@@ -187,6 +202,9 @@
         background: rgba(0,0,0,.35); border-top: 1px solid rgba(255,255,255,.08);
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
+      .m3u8-footer-actions {
+        display: inline-flex; align-items: center; gap: 6px;
+      }
       #m3u8-list {
         width: 100%; border-collapse: collapse;
       }
@@ -196,6 +214,9 @@
       }
       #m3u8-list td:first-child {
         width: 60px; text-align: center;
+      }
+      #m3u8-panel.m3u8-panel-expanded #m3u8-list td:first-child {
+        width: 120px;
       }
       #m3u8-list td:last-child {
         display: flex; align-items: center; gap: 8px;
@@ -224,6 +245,11 @@
         padding: 4px;
         width: 40px; justify-content: center;
       }
+      .m3u8-btn-expand {
+        background: rgba(15,23,42,.85); border-color: rgba(255,255,255,.08);
+        padding: 4px 6px;
+      }
+      .m3u8-btn-expand:hover { background: rgba(30,41,59,.95); }
       .m3u8-btn-open {
         background: rgba(31,41,55,.9); border-color: rgba(255,255,255,.08);
         padding: 4px 9px; font-size: 13px;
@@ -245,6 +271,9 @@
       .m3u8-thumb {
         width: 41px; height: auto; object-fit: cover; border-radius: 6px; cursor: pointer;
       }
+      #m3u8-panel.m3u8-panel-expanded .m3u8-thumb {
+        width: 82px;
+      }
     `;
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
@@ -259,6 +288,9 @@
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
       });
+    });
+    document.getElementById('expand-btn').addEventListener('click', () => {
+      panel.classList.toggle('m3u8-panel-expanded');
     });
   }
 
