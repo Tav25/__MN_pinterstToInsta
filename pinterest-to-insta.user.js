@@ -125,7 +125,7 @@
     panel.innerHTML = `
       <div id="m3u8-header">
         <div class="m3u8-title">
-          M3U8 найдено <span id="m3u8-count" class="m3u8-badge">0</span>
+          VD <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
         <button id="download-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-download" aria-label="Скачать">
           <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -141,7 +141,7 @@
         <table id="m3u8-list"><tbody></tbody></table>
       </div>
       <div id="m3u8-footer">
-        <span>Добавлено <span id="m3u8-footer-count">0</span></span>
+        <span>ADD: <span id="m3u8-footer-count">0</span></span>
         <div class="m3u8-footer-actions">
           <button id="expand-btn" class="m3u8-btn m3u8-btn-expand" aria-label="Развернуть">
             <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -167,7 +167,7 @@
     css.textContent = `
       #m3u8-panel {
         position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
-        width: 150px; height: calc(100vh - 24px);
+        width: 175px; height: calc(100vh - 24px);
         background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
@@ -177,10 +177,11 @@
         top: 0; right: 0; bottom: 0; left: 0;
         width: 100vw; height: 100vh;
         border-radius: 0;
+        padding: 10px;
       }
       #m3u8-header {
         position: sticky; top: 0; z-index: 1;
-        padding: 10px 12px; font-weight: 600;
+        padding: 6px 8px; font-weight: 600;
         background: rgba(0,0,0,.4); border-bottom: 1px solid rgba(255,255,255,.08);
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
@@ -198,7 +199,7 @@
       }
       #m3u8-footer {
         position: sticky; bottom: 0; z-index: 1;
-        padding: 8px 12px; font-weight: 500;
+        padding: 6px 8px; font-weight: 500;
         background: rgba(0,0,0,.35); border-top: 1px solid rgba(255,255,255,.08);
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
@@ -209,7 +210,7 @@
         width: auto; border-collapse: collapse;
       }
       #m3u8-list tbody {
-        display: flex; flex-wrap: wrap; gap: 10px; padding: 10px;
+        display: flex; flex-wrap: wrap; gap: 5px; padding: 5px;
       }
       #m3u8-list tr {
         display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -228,7 +229,7 @@
         border: 1px solid rgba(255,255,255,.08);
         background: rgba(31,41,55,.7);
         color: #f9fafb;
-        border-radius: 999px;
+        border-radius: 5px;
         padding: 4px 10px;
         font-size: 12px; font-weight: 600; cursor: pointer;
         letter-spacing: .2px;
