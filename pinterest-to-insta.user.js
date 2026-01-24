@@ -263,6 +263,14 @@
       .m3u8-btn-secondary:hover {
         background: rgba(59,130,246,.3); border-color: rgba(59,130,246,.5);
       }
+      #select-all-btn,
+      #deselect-all-btn {
+        display: none;
+      }
+      #m3u8-panel.m3u8-panel-expanded #select-all-btn,
+      #m3u8-panel.m3u8-panel-expanded #deselect-all-btn {
+        display: inline-flex;
+      }
       .m3u8-btn-download {
         flex-direction: row; align-items: center; gap: 3px;
         padding: 4px;
