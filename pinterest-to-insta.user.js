@@ -46,6 +46,14 @@
     localStorage.removeItem('addedM3u8Links');
   }
 
+  function updateStoredCounts() {
+    const total = String(getStoredLinks().length);
+    const downloadCount = document.getElementById('m3u8-download-count');
+    const footerCount = document.getElementById('m3u8-footer-count');
+    if (downloadCount) downloadCount.textContent = total;
+    if (footerCount) footerCount.textContent = total;
+  }
+
   function deriveCmfLinks(link) {
     try {
       const url = new URL(link, location.href);
@@ -151,6 +159,12 @@
               <path d="M20 20l-7-7"></path>
             </svg>
           </button>
+          <button id="select-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
+            Выделить все
+          </button>
+          <button id="deselect-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
+            Отменить все
+          </button>
           <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
             <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18"></path>
@@ -243,6 +257,12 @@
         background: #3b82f6; border-color: #3b82f6;
       }
       .m3u8-btn-primary:hover { background: #2563eb; }
+      .m3u8-btn-secondary {
+        background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.35);
+      }
+      .m3u8-btn-secondary:hover {
+        background: rgba(59,130,246,.3); border-color: rgba(59,130,246,.5);
+      }
       .m3u8-btn-download {
         flex-direction: row; align-items: center; gap: 3px;
         padding: 4px;
@@ -283,16 +303,31 @@
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
-    const initialAdded = String(getStoredLinks().length);
-    document.getElementById('m3u8-download-count').textContent = initialAdded;
-    document.getElementById('m3u8-footer-count').textContent = initialAdded;
+    updateStoredCounts();
     document.getElementById('clear-btn').addEventListener('click', () => {
       clearStoredLinks();
-      document.getElementById('m3u8-download-count').textContent = '0';
-      document.getElementById('m3u8-footer-count').textContent = '0';
+      updateStoredCounts();
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
       });
+    });
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('#m3u8-list tr').forEach(row => {
+        const url = row.dataset.url;
+        if (!url) return;
+        addToStorage(url);
+        row.classList.add('m3u8-added');
+      });
+      updateStoredCounts();
+    });
+    document.getElementById('deselect-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('#m3u8-list tr').forEach(row => {
+        const url = row.dataset.url;
+        if (!url) return;
+        removeFromStorage(url);
+        row.classList.remove('m3u8-added');
+      });
+      updateStoredCounts();
     });
     document.getElementById('expand-btn').addEventListener('click', () => {
       panel.classList.toggle('m3u8-panel-expanded');
@@ -303,7 +338,6 @@
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
-    const footerCount = document.getElementById('m3u8-footer-count');
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
 
@@ -311,22 +345,18 @@
     const previewUrl = deriveCmfLinks(url)[0] || url;
 
     const tr = document.createElement('tr');
+    tr.dataset.url = url;
     const tdImg = document.createElement('td');
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
-    const updateCounts = () => {
-      const total = String(getStoredLinks().length);
-      footerCount.textContent = total;
-      document.getElementById('m3u8-download-count').textContent = total;
-    };
     const markAdded = () => {
       tr.classList.add('m3u8-added');
-      updateCounts();
+      updateStoredCounts();
     };
     const markRemoved = () => {
       tr.classList.remove('m3u8-added');
-      updateCounts();
+      updateStoredCounts();
     };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
