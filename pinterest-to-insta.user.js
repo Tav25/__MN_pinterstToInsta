@@ -174,10 +174,10 @@
         overflow: hidden;
       }
       #m3u8-panel.m3u8-panel-expanded {
-        top: 0; right: 0; bottom: 0; left: 0;
-        width: 100vw; height: 100vh;
-        border-radius: 0;
-        padding: 10px;
+        top: 20px; right: 20px; bottom: 20px; left: 20px;
+        width: auto; height: auto;
+        border-radius: 5px;
+        padding: 0;
       }
       #m3u8-header {
         position: sticky; top: 0; z-index: 1;
