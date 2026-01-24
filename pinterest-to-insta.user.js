@@ -100,7 +100,7 @@
     URL.revokeObjectURL(url);
   }
 
-  function downloadFilesSequentially() {
+  async function downloadFilesSequentially() {
     const links = getStoredLinks();
     const downloadSet = new Set();
     links.forEach(link => {
@@ -115,15 +115,37 @@
       alert('Нет добавленных ссылок для скачивания.');
       return;
     }
-    downloadLinks.forEach((link, index) => {
-      setTimeout(() => {
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const getFileName = (link) => {
+      try {
+        const url = new URL(link);
+        const last = url.pathname.split('/').pop();
+        return last || 'pinterest-video.mp4';
+      } catch (e) {
+        return 'pinterest-video.mp4';
+      }
+    };
+    for (const link of downloadLinks) {
+      try {
+        const response = await fetch(link, { mode: 'cors', credentials: 'omit' });
+        if (!response.ok) throw new Error('fetch failed');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = link;
-        a.download = '';
+        a.href = blobUrl;
+        a.download = getFileName(link);
         a.rel = 'noopener';
         a.click();
-      }, index * 300);
-    });
+        URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        const a = document.createElement('a');
+        a.href = link;
+        a.download = getFileName(link);
+        a.rel = 'noopener';
+        a.click();
+      }
+      await delay(350);
+    }
   }
 
   // простая защита от дубликатов и трекинга
