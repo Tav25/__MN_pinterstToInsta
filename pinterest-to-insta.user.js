@@ -54,6 +54,12 @@
     if (footerCount) footerCount.textContent = total;
   }
 
+  function markRowError(url) {
+    const row = document.querySelector(`#m3u8-list tr[data-url="${CSS.escape(url)}"]`);
+    if (!row) return;
+    row.classList.add('m3u8-error');
+  }
+
   function deriveCmfLinks(link) {
     try {
       const url = new URL(link, location.href);
@@ -102,16 +108,16 @@
 
   async function downloadFilesSequentially() {
     const links = getStoredLinks();
-    const downloadSet = new Set();
+    const downloadMap = new Map();
     links.forEach(link => {
       if (/(_720w\.mp4)(\?|$)/i.test(link)) {
-        downloadSet.add(link);
+        downloadMap.set(link, link);
         return;
       }
-      deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
+      deriveCmfLinks(link).forEach(derived => downloadMap.set(derived, link));
     });
-    const downloadLinks = Array.from(downloadSet);
-    if (downloadLinks.length === 0) {
+    const downloadItems = Array.from(downloadMap.entries()).map(([link, source]) => ({ link, source }));
+    if (downloadItems.length === 0) {
       alert('Нет добавленных ссылок для скачивания.');
       return;
     }
@@ -125,7 +131,7 @@
         return 'pinterest-video.mp4';
       }
     };
-    for (const link of downloadLinks) {
+    for (const { link, source } of downloadItems) {
       try {
         const response = await fetch(link, { mode: 'cors', credentials: 'omit' });
         if (!response.ok) throw new Error('fetch failed');
@@ -138,11 +144,10 @@
         a.click();
         URL.revokeObjectURL(blobUrl);
       } catch (e) {
-        const a = document.createElement('a');
-        a.href = link;
-        a.download = getFileName(link);
-        a.rel = 'noopener';
-        a.click();
+        if (removeFromStorage(source)) {
+          updateStoredCounts();
+        }
+        markRowError(source);
       }
       await delay(350);
     }
@@ -357,6 +362,16 @@
       .m3u8-btn-clear:hover { background: #ea580c; border-color: #ea580c; }
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
+      }
+      .m3u8-error {
+        background: rgba(239,68,68,.2);
+        border-radius: 6px;
+        padding: 4px;
+      }
+      .m3u8-error .m3u8-thumb {
+        filter: grayscale(100%) brightness(.7);
+        border-color: rgba(239,68,68,.9);
+        box-shadow: 0 0 0 2px rgba(239,68,68,.55), 0 6px 14px rgba(0,0,0,.25);
       }
       .m3u8-thumb {
         width: 41px; height: auto; object-fit: cover; border-radius: 8px; cursor: pointer;
