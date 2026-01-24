@@ -172,9 +172,6 @@
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
-        transition: top .25s ease, right .25s ease, bottom .25s ease, left .25s ease,
-          width .25s ease, height .25s ease, border-radius .25s ease, box-shadow .25s ease;
-        will-change: top, right, bottom, left, width, height, border-radius;
       }
       #m3u8-panel.m3u8-panel-expanded {
         top: 20px; right: 20px; bottom: 20px; left: 20px;
