@@ -166,12 +166,15 @@
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
-        position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
-        width: 175px; height: calc(100vh - 24px);
-        background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
+        position: fixed; right: 20px; top: 20px; bottom: 20px; z-index: 99999;
+        width: 175px; height: calc(100vh - 40px);
+        background: rgba(18,18,18,.4); color: #fff; border-radius: 5px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
+        transition: top .25s ease, right .25s ease, bottom .25s ease, left .25s ease,
+          width .25s ease, height .25s ease, border-radius .25s ease, box-shadow .25s ease;
+        will-change: top, right, bottom, left, width, height, border-radius;
       }
       #m3u8-panel.m3u8-panel-expanded {
         top: 20px; right: 20px; bottom: 20px; left: 20px;
