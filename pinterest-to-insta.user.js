@@ -100,6 +100,32 @@
     URL.revokeObjectURL(url);
   }
 
+  function downloadFilesSequentially() {
+    const links = getStoredLinks();
+    const downloadSet = new Set();
+    links.forEach(link => {
+      if (/(_720w\.mp4)(\?|$)/i.test(link)) {
+        downloadSet.add(link);
+        return;
+      }
+      deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
+    });
+    const downloadLinks = Array.from(downloadSet);
+    if (downloadLinks.length === 0) {
+      alert('Нет добавленных ссылок для скачивания.');
+      return;
+    }
+    downloadLinks.forEach((link, index) => {
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = link;
+        a.download = '';
+        a.rel = 'noopener';
+        a.click();
+      }, index * 300);
+    });
+  }
+
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
     try {
@@ -143,6 +169,14 @@
             <path d="M5 21h14"></path>
           </svg>
           <span id="m3u8-download-count" class="m3u8-btn-count">0</span>
+        </button>
+        <button id="download-files-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-files" aria-label="Скачать файлы">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v10"></path>
+            <path d="M8 9l4 4 4-4"></path>
+            <path d="M5 19h14"></path>
+          </svg>
         </button>
       </div>
       <div id="m3u8-body">
@@ -276,6 +310,9 @@
         padding: 4px;
         width: 40px; justify-content: center;
       }
+      .m3u8-btn-files {
+        width: 34px; padding: 4px; justify-content: center;
+      }
       .m3u8-btn-expand {
         background: rgba(15,23,42,.85); border-color: rgba(255,255,255,.08);
         padding: 4px 6px;
@@ -311,6 +348,7 @@
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
+    document.getElementById('download-files-btn').addEventListener('click', downloadFilesSequentially);
     updateStoredCounts();
     document.getElementById('clear-btn').addEventListener('click', () => {
       clearStoredLinks();
