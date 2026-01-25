@@ -46,6 +46,20 @@
     localStorage.removeItem('addedM3u8Links');
   }
 
+  function updateStoredCounts() {
+    const total = String(getStoredLinks().length);
+    const downloadCount = document.getElementById('m3u8-download-count');
+    const footerCount = document.getElementById('m3u8-footer-count');
+    if (downloadCount) downloadCount.textContent = total;
+    if (footerCount) footerCount.textContent = total;
+  }
+
+  function markRowError(url) {
+    const row = document.querySelector(`#m3u8-list tr[data-url="${CSS.escape(url)}"]`);
+    if (!row) return;
+    row.classList.add('m3u8-error');
+  }
+
   function deriveCmfLinks(link) {
     try {
       const url = new URL(link, location.href);
@@ -92,6 +106,53 @@
     URL.revokeObjectURL(url);
   }
 
+  async function downloadFilesSequentially() {
+    const links = getStoredLinks();
+    const downloadMap = new Map();
+    links.forEach(link => {
+      if (/(_720w\.mp4)(\?|$)/i.test(link)) {
+        downloadMap.set(link, link);
+        return;
+      }
+      deriveCmfLinks(link).forEach(derived => downloadMap.set(derived, link));
+    });
+    const downloadItems = Array.from(downloadMap.entries()).map(([link, source]) => ({ link, source }));
+    if (downloadItems.length === 0) {
+      alert('Нет добавленных ссылок для скачивания.');
+      return;
+    }
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const getFileName = (link) => {
+      try {
+        const url = new URL(link);
+        const last = url.pathname.split('/').pop();
+        return last || 'pinterest-video.mp4';
+      } catch (e) {
+        return 'pinterest-video.mp4';
+      }
+    };
+    for (const { link, source } of downloadItems) {
+      try {
+        const response = await fetch(link, { mode: 'cors', credentials: 'omit' });
+        if (!response.ok) throw new Error('fetch failed');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = getFileName(link);
+        a.rel = 'noopener';
+        a.click();
+        URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        if (removeFromStorage(source)) {
+          updateStoredCounts();
+        }
+        markRowError(source);
+      }
+      await delay(350);
+    }
+  }
+
   // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
     try {
@@ -136,6 +197,14 @@
           </svg>
           <span id="m3u8-download-count" class="m3u8-btn-count">0</span>
         </button>
+        <button id="download-files-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-files" aria-label="Скачать файлы">
+          <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v10"></path>
+            <path d="M8 9l4 4 4-4"></path>
+            <path d="M5 19h14"></path>
+          </svg>
+        </button>
       </div>
       <div id="m3u8-body">
         <table id="m3u8-list"><tbody></tbody></table>
@@ -150,6 +219,12 @@
               <path d="M4 4l7 7"></path>
               <path d="M20 20l-7-7"></path>
             </svg>
+          </button>
+          <button id="select-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
+            Выделить все
+          </button>
+          <button id="deselect-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
+            Отменить все
           </button>
           <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Очистить">
             <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -166,18 +241,18 @@
     const css = document.createElement('style');
     css.textContent = `
       #m3u8-panel {
-        position: fixed; right: 12px; top: 12px; bottom: 12px; z-index: 99999;
-        width: 175px; height: calc(100vh - 24px);
-        background: rgba(18,18,18,.4); color: #fff; border-radius: 10px;
+        position: fixed; right: 20px; top: 20px; bottom: 20px; z-index: 99999;
+        width: 175px; height: calc(100vh - 40px);
+        background: rgba(18,18,18,.4); color: #fff; border-radius: 5px;
         backdrop-filter: blur(6px); box-shadow: 0 10px 22px rgba(0,0,0,.35);
         font: 12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif;
         overflow: hidden;
       }
       #m3u8-panel.m3u8-panel-expanded {
-        top: 0; right: 0; bottom: 0; left: 0;
-        width: 100vw; height: 100vh;
-        border-radius: 0;
-        padding: 10px;
+        top: 20px; right: 20px; bottom: 20px; left: 20px;
+        width: auto; height: auto;
+        border-radius: 5px;
+        padding: 0;
       }
       #m3u8-header {
         position: sticky; top: 0; z-index: 1;
@@ -243,10 +318,27 @@
         background: #3b82f6; border-color: #3b82f6;
       }
       .m3u8-btn-primary:hover { background: #2563eb; }
+      .m3u8-btn-secondary {
+        background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.35);
+      }
+      .m3u8-btn-secondary:hover {
+        background: rgba(59,130,246,.3); border-color: rgba(59,130,246,.5);
+      }
+      #select-all-btn,
+      #deselect-all-btn {
+        display: none;
+      }
+      #m3u8-panel.m3u8-panel-expanded #select-all-btn,
+      #m3u8-panel.m3u8-panel-expanded #deselect-all-btn {
+        display: inline-flex;
+      }
       .m3u8-btn-download {
         flex-direction: row; align-items: center; gap: 3px;
         padding: 4px;
         width: 40px; justify-content: center;
+      }
+      .m3u8-btn-files {
+        width: 34px; padding: 4px; justify-content: center;
       }
       .m3u8-btn-expand {
         background: rgba(15,23,42,.85); border-color: rgba(255,255,255,.08);
@@ -271,6 +363,16 @@
       .m3u8-added .m3u8-thumb {
         filter: grayscale(100%) brightness(.8);
       }
+      .m3u8-error {
+        background: rgba(239,68,68,.2);
+        border-radius: 6px;
+        padding: 4px;
+      }
+      .m3u8-error .m3u8-thumb {
+        filter: grayscale(100%) brightness(.7);
+        border-color: rgba(239,68,68,.9);
+        box-shadow: 0 0 0 2px rgba(239,68,68,.55), 0 6px 14px rgba(0,0,0,.25);
+      }
       .m3u8-thumb {
         width: 41px; height: auto; object-fit: cover; border-radius: 8px; cursor: pointer;
         border: 1px solid rgba(255,255,255,.18);
@@ -283,16 +385,32 @@
     document.documentElement.appendChild(css);
     document.documentElement.appendChild(panel);
     document.getElementById('download-btn').addEventListener('click', downloadLinks);
-    const initialAdded = String(getStoredLinks().length);
-    document.getElementById('m3u8-download-count').textContent = initialAdded;
-    document.getElementById('m3u8-footer-count').textContent = initialAdded;
+    document.getElementById('download-files-btn').addEventListener('click', downloadFilesSequentially);
+    updateStoredCounts();
     document.getElementById('clear-btn').addEventListener('click', () => {
       clearStoredLinks();
-      document.getElementById('m3u8-download-count').textContent = '0';
-      document.getElementById('m3u8-footer-count').textContent = '0';
+      updateStoredCounts();
       document.querySelectorAll('#m3u8-list tr.m3u8-added').forEach(row => {
         row.classList.remove('m3u8-added');
       });
+    });
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('#m3u8-list tr').forEach(row => {
+        const url = row.dataset.url;
+        if (!url) return;
+        addToStorage(url);
+        row.classList.add('m3u8-added');
+      });
+      updateStoredCounts();
+    });
+    document.getElementById('deselect-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('#m3u8-list tr').forEach(row => {
+        const url = row.dataset.url;
+        if (!url) return;
+        removeFromStorage(url);
+        row.classList.remove('m3u8-added');
+      });
+      updateStoredCounts();
     });
     document.getElementById('expand-btn').addEventListener('click', () => {
       panel.classList.toggle('m3u8-panel-expanded');
@@ -303,7 +421,6 @@
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     const count = document.getElementById('m3u8-count');
-    const footerCount = document.getElementById('m3u8-footer-count');
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
 
@@ -311,22 +428,18 @@
     const previewUrl = deriveCmfLinks(url)[0] || url;
 
     const tr = document.createElement('tr');
+    tr.dataset.url = url;
     const tdImg = document.createElement('td');
     const img = document.createElement('img');
     img.src = thumbUrl;
     img.className = 'm3u8-thumb';
-    const updateCounts = () => {
-      const total = String(getStoredLinks().length);
-      footerCount.textContent = total;
-      document.getElementById('m3u8-download-count').textContent = total;
-    };
     const markAdded = () => {
       tr.classList.add('m3u8-added');
-      updateCounts();
+      updateStoredCounts();
     };
     const markRemoved = () => {
       tr.classList.remove('m3u8-added');
-      updateCounts();
+      updateStoredCounts();
     };
     img.onload = () => {
       pendingM3u8Urls.delete(url);
