@@ -448,8 +448,16 @@
     css.id = 'm3u8-highlight-style';
     css.textContent = `
       [data-test-pin-id].m3u8-video-pin {
-        box-shadow: inset 0 0 0 3px #22c55e !important;
+        position: relative;
+      }
+      [data-test-pin-id].m3u8-video-pin::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 3px solid #22c55e;
         border-radius: 16px;
+        pointer-events: none;
+        z-index: 2147483647;
       }
     `;
     document.documentElement.appendChild(css);
