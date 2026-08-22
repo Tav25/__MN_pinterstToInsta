@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Pinterest M3U8 link helper
-// @namespace    https://your.namespace.example
-// @version      0.5
+// @namespace    https://github.com/Tav25
+// @version      0.6
 // @description  Показывает ссылку на .m3u8 под пином и собирает все найденные .m3u8-URL на странице
 // @match        https://*.pinterest.com/*
 // @match        https://*.pinterest.*/*
 // @match        https://pinterest.*/*
 // @run-at       document-start
 // @grant        none
+// @noframe
 // @updateURL    https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
 // @downloadURL  https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
 // ==/UserScript==
@@ -81,28 +82,32 @@
   }
 
   function downloadLinks() {
-    const links = getStoredLinks();
-    const downloadSet = new Set();
-    links.forEach(link => {
-      if (/(_720w\.mp4)(\?|$)/i.test(link)) {
-        downloadSet.add(link);
+    try {
+      const links = getStoredLinks();
+      const downloadSet = new Set();
+      links.forEach(link => {
+        if (/(_720w\.mp4)(\?|$)/i.test(link)) {
+          downloadSet.add(link);
+          return;
+        }
+        deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
+      });
+      const downloadLinks = Array.from(downloadSet);
+      if (downloadLinks.length === 0) {
+        alert('Нет добавленных ссылок для скачивания.');
         return;
       }
-      deriveCmfLinks(link).forEach(derived => downloadSet.add(derived));
-    });
-    const downloadLinks = Array.from(downloadSet);
-    if (downloadLinks.length === 0) {
-      alert('Нет добавленных ссылок для скачивания.');
-      return;
+      const text = downloadLinks.join('\n');
+      const blob = new Blob([text], {type: 'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'm3u8_links.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Ошибка при скачивании: ' + e.message);
     }
-    const text = downloadLinks.join('\n');
-    const blob = new Blob([text], {type: 'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'm3u8_links.txt';
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   async function downloadFilesSequentially() {
@@ -174,7 +179,7 @@
   }
 
   function log(...args) {
-    //console.log('[CMFV]', ...args);
+    console.log('[CMFV]', ...args);
   }
 
   // ---------- UI: плавающая панель ----------
@@ -377,6 +382,12 @@
         border: 1px solid rgba(255,255,255,.18);
         box-shadow: 0 6px 14px rgba(0,0,0,.25);
       }
+      .m3u8-thumb-fallback {
+        display: flex; align-items: center; justify-content: center;
+        width: 41px; min-height: 55px;
+        background: rgba(255,255,255,.08);
+        color: rgba(255,255,255,.6); font-weight: 700;
+      }
       #m3u8-panel.m3u8-panel-expanded .m3u8-thumb {
         width: 82px;
       }
@@ -419,7 +430,7 @@
   function addToPanel(url, title) {
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
-    const count = document.getElementById('m3u8-count');
+    if (!tbody) return;
     if (m3u8Urls.has(url) || pendingM3u8Urls.has(url)) return;
     pendingM3u8Urls.add(url);
 
@@ -429,9 +440,15 @@
     const tr = document.createElement('tr');
     tr.dataset.url = url;
     const tdImg = document.createElement('td');
-    const img = document.createElement('img');
-    img.src = thumbUrl;
-    img.className = 'm3u8-thumb';
+    let appended = false;
+    const appendRow = (thumbNode) => {
+      if (appended) return;
+      appended = true;
+      tdImg.appendChild(thumbNode);
+      tr.appendChild(tdImg);
+      tr.appendChild(tdLink);
+      tbody.prepend(tr);
+    };
     const markAdded = () => {
       tr.classList.add('m3u8-added');
       updateStoredCounts();
@@ -440,18 +457,7 @@
       tr.classList.remove('m3u8-added');
       updateStoredCounts();
     };
-    img.onload = () => {
-      pendingM3u8Urls.delete(url);
-      m3u8Urls.add(url);
-      tdImg.appendChild(img);
-      tr.appendChild(tdImg);
-      tr.appendChild(tdLink);
-      tbody.prepend(tr);
-      count.textContent = String(m3u8Urls.size);
-    };
-    img.onerror = () => {
-      pendingM3u8Urls.delete(url);
-    };
+
     const tdLink = document.createElement('td');
     const btnOpen = document.createElement('button');
     btnOpen.innerHTML = `
@@ -463,7 +469,13 @@
     `;
     btnOpen.setAttribute('aria-label', 'Открыть');
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
-    btnOpen.onclick = () => window.open(previewUrl, '_blank');
+    btnOpen.onclick = () => {
+      try {
+        window.open(previewUrl, '_blank');
+      } catch (e) {
+        alert('Не удалось открыть ссылку: ' + e.message);
+      }
+    };
     if (getStoredLinks().includes(url)) {
       markAdded();
     }
@@ -478,15 +490,42 @@
         markAdded();
       }
     };
+
+    const img = document.createElement('img');
+    img.src = thumbUrl;
+    img.className = 'm3u8-thumb';
     img.onclick = handleToggle;
+    img.onload = () => {
+      pendingM3u8Urls.delete(url);
+      m3u8Urls.add(url);
+      appendRow(img);
+      const count = document.getElementById('m3u8-count');
+      if (count) count.textContent = String(m3u8Urls.size);
+    };
+    img.onerror = () => {
+      // превью недоступно — показываем fallback-плитку, чтобы ссылка не терялась
+      pendingM3u8Urls.delete(url);
+      m3u8Urls.add(url);
+      const fallback = document.createElement('div');
+      fallback.className = 'm3u8-thumb m3u8-thumb-fallback';
+      fallback.textContent = '?';
+      fallback.title = url;
+      fallback.onclick = handleToggle;
+      appendRow(fallback);
+      const count = document.getElementById('m3u8-count');
+      if (count) count.textContent = String(m3u8Urls.size);
+    };
     tdLink.appendChild(btnOpen);
   }
 
   // ---------- привязка к карточке пина ----------
+  let lastHovered = null;
+  document.addEventListener('mouseover', (e) => {
+    lastHovered = e.target;
+  }, { passive: true, capture: true });
+
   function getHoveredElement() {
-    const path = document.querySelectorAll(':hover');
-    if (!path || !path.length) return null;
-    return path[path.length - 1];
+    return lastHovered;
   }
 
   function findPinContainer(startEl) {
@@ -602,11 +641,18 @@
   }
 
   // ---------- старт ----------
+  // патчи fetch/XHR ставим сразу (document-start), чтобы не потерять
+  // запросы, которые Pinterest делает до DOMContentLoaded
+  try {
+    patchFetch();
+    patchXHR();
+  } catch (e) {
+    console.error('[M3U8] patch error', e);
+  }
+
   onReady(() => {
     try {
       ensurePanel();
-      patchFetch();
-      patchXHR();
       hookHistory();
       log('M3U8 helper started');
     } catch (e) {
