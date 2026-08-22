@@ -1,12 +1,12 @@
-﻿(function () {
+(function () {
   'use strict';
 
-  // ---------- СѓС‚РёР»РёС‚С‹ ----------
+  // ---------- утилиты ----------
   const seen = new Set();
   const m3u8Urls = new Set();
   const pendingM3u8Urls = new Set();
 
-  // localStorage РґР»СЏ РґРѕР±Р°РІР»РµРЅРЅС‹С… СЃСЃС‹Р»РѕРє
+  // localStorage для добавленных ссылок
   function addToStorage(url) {
     let links = JSON.parse(localStorage.getItem('addedM3u8Links') || '[]');
     if (links.includes(url)) return false;
@@ -79,7 +79,7 @@
       });
       const downloadLinks = Array.from(downloadSet);
       if (downloadLinks.length === 0) {
-        alert('РќРµС‚ РґРѕР±Р°РІР»РµРЅРЅС‹С… СЃСЃС‹Р»РѕРє РґР»СЏ СЃРєР°С‡РёРІР°РЅРёСЏ.');
+        alert('No added links to download.');
         return;
       }
       const text = downloadLinks.join('\n');
@@ -91,7 +91,7 @@
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('РћС€РёР±РєР° РїСЂРё СЃРєР°С‡РёРІР°РЅРёРё: ' + e.message);
+      alert('Download error: ' + e.message);
     }
   }
 
@@ -107,7 +107,7 @@
     });
     const downloadItems = Array.from(downloadMap.entries()).map(([link, source]) => ({ link, source }));
     if (downloadItems.length === 0) {
-      alert('РќРµС‚ РґРѕР±Р°РІР»РµРЅРЅС‹С… СЃСЃС‹Р»РѕРє РґР»СЏ СЃРєР°С‡РёРІР°РЅРёСЏ.');
+      alert('No added links to download.');
       return;
     }
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -142,11 +142,11 @@
     }
   }
 
-  // РїСЂРѕСЃС‚Р°СЏ Р·Р°С‰РёС‚Р° РѕС‚ РґСѓР±Р»РёРєР°С‚РѕРІ Рё С‚СЂРµРєРёРЅРіР°
+  // простая защита от дубликатов и трекинга
   function normalizeUrl(u) {
     try {
       const url = new URL(u, location.href);
-      // СѓР±РёСЂР°РµРј СЏРІРЅС‹Рµ С‚СЂРµРєРёРЅРі-РїР°СЂР°РјРµС‚СЂС‹ (РЅР° РІСЃСЏРєРёР№)
+      // убираем явные трекинг-параметры (на всякий)
       ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(p => url.searchParams.delete(p));
       return url.toString();
     } catch (e) {
@@ -167,7 +167,7 @@
     console.log('[CMFV]', ...args);
   }
 
-  // ---------- UI: РїР»Р°РІР°СЋС‰Р°СЏ РїР°РЅРµР»СЊ ----------
+  // ---------- UI: плавающая панель ----------
   function ensurePanel() {
     if (document.getElementById('m3u8-panel')) return;
     const panel = document.createElement('div');
@@ -177,7 +177,7 @@
         <div class="m3u8-title">
           VD <span id="m3u8-count" class="m3u8-badge">0</span>
         </div>
-        <button id="download-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-download" aria-label="РЎРєР°С‡Р°С‚СЊ">
+        <button id="download-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-download" aria-label="Download">
           <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 3v12"></path>
@@ -186,7 +186,7 @@
           </svg>
           <span id="m3u8-download-count" class="m3u8-btn-count">0</span>
         </button>
-        <button id="download-files-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-files" aria-label="РЎРєР°С‡Р°С‚СЊ С„Р°Р№Р»С‹">
+        <button id="download-files-btn" class="m3u8-btn m3u8-btn-primary m3u8-btn-files" aria-label="Download files">
           <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 3v10"></path>
@@ -201,7 +201,7 @@
       <div id="m3u8-footer">
         <span>ADD: <span id="m3u8-footer-count">0</span></span>
         <div class="m3u8-footer-actions">
-          <button id="expand-btn" class="m3u8-btn m3u8-btn-expand" aria-label="Р Р°Р·РІРµСЂРЅСѓС‚СЊ">
+          <button id="expand-btn" class="m3u8-btn m3u8-btn-expand" aria-label="Expand">
             <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 10V4h6"></path>
               <path d="M20 14v6h-6"></path>
@@ -210,12 +210,12 @@
             </svg>
           </button>
           <button id="select-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
-            Р’С‹РґРµР»РёС‚СЊ РІСЃРµ
+            Выделить все
           </button>
           <button id="deselect-all-btn" class="m3u8-btn m3u8-btn-secondary" type="button">
-            РћС‚РјРµРЅРёС‚СЊ РІСЃРµ
+            Отменить все
           </button>
-          <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="РћС‡РёСЃС‚РёС‚СЊ">
+          <button id="clear-btn" class="m3u8-btn m3u8-btn-clear" aria-label="Clear">
             <svg class="m3u8-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18"></path>
               <path d="M8 6V4h8v2"></path>
@@ -452,13 +452,13 @@
         <circle cx="12" cy="12" r="3"></circle>
       </svg>
     `;
-    btnOpen.setAttribute('aria-label', 'РћС‚РєСЂС‹С‚СЊ');
+    btnOpen.setAttribute('aria-label', 'Open');
     btnOpen.className = 'm3u8-btn m3u8-btn-open';
     btnOpen.onclick = () => {
       try {
         window.open(previewUrl, '_blank');
       } catch (e) {
-        alert('РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ СЃСЃС‹Р»РєСѓ: ' + e.message);
+        alert('Failed to open link: ' + e.message);
       }
     };
     if (getStoredLinks().includes(url)) {
@@ -488,7 +488,7 @@
       if (count) count.textContent = String(m3u8Urls.size);
     };
     img.onerror = () => {
-      // РїСЂРµРІСЊСЋ РЅРµРґРѕСЃС‚СѓРїРЅРѕ вЂ” РїРѕРєР°Р·С‹РІР°РµРј fallback-РїР»РёС‚РєСѓ, С‡С‚РѕР±С‹ СЃСЃС‹Р»РєР° РЅРµ С‚РµСЂСЏР»Р°СЃСЊ
+      // превью недоступно — показываем fallback-плитку, чтобы ссылка не терялась
       pendingM3u8Urls.delete(url);
       m3u8Urls.add(url);
       const fallback = document.createElement('div');
@@ -503,7 +503,7 @@
     tdLink.appendChild(btnOpen);
   }
 
-  // ---------- РїСЂРёРІСЏР·РєР° Рє РєР°СЂС‚РѕС‡РєРµ РїРёРЅР° ----------
+  // ---------- привязка к карточке пина ----------
   let lastHovered = null;
   document.addEventListener('mouseover', (e) => {
     lastHovered = e.target;
@@ -516,10 +516,10 @@
   function findPinContainer(startEl) {
     if (!startEl) return null;
     let el = startEl;
-    // РїРѕРїС‹С‚РєР° РЅР°Р№С‚Рё РѕР±С‘СЂС‚РєСѓ РїРёРЅР° РєР°Рє РјРѕР¶РЅРѕ РІС‹С€Рµ:
+    // попытка найти обёртку пина как можно выше:
     const isPinLike = (node) => {
       if (!node || node.nodeType !== 1) return false;
-      // СЌРІСЂРёСЃС‚РёРєРё: СЃСЃС‹Р»РєР° РЅР° /pin/..., СЂРѕР»СЊ listitem, СЏРІРЅС‹Рµ data-Р°С‚СЂРёР±СѓС‚С‹, РІРёРґРµРѕ/РєР°СЂС‚РёРЅРєР° РІРЅСѓС‚СЂРё
+      // эвристики: ссылка на /pin/..., роль listitem, явные data-атрибуты, видео/картинка внутри
       if (node.matches('a[href*="/pin/"]')) return true;
       if (node.matches('[role="listitem"]')) return true;
       if (node.matches('div[data-test-id*="pin"], div[data-test-id*="Pin"], div[class*="Pin"]')) return true;
@@ -535,21 +535,21 @@
 
   function extractPinKey(container) {
     if (!container) return null;
-    // РїСЂРѕР±СѓРµРј РґРѕСЃС‚Р°С‚СЊ СЃРѕР±СЃС‚РІРµРЅРЅРѕ id РїРёРЅР° РёР· СЃСЃС‹Р»РєРё
+    // пробуем достать собственно id пина из ссылки
     const a = container.closest('a[href*="/pin/"]') || container.querySelector('a[href*="/pin/"]');
     if (a) {
       const m = a.href.match(/\/pin\/(\d+)/);
       if (m) return `pin:${m[1]}`;
       return `href:${a.href}`;
     }
-    // Р·Р°РїР°СЃРЅРѕР№ РІР°СЂРёР°РЅС‚ вЂ” РїСѓС‚СЊ РІ DOM
+    // запасной вариант — путь в DOM
     return container.id ? `node#${container.id}` : `node@${(container.className||'').toString().slice(0,80)}`;
   }
 
   function handleFoundUrl(rawUrl) {
     const url = normalizeUrl(rawUrl);
     if (seen.has(url)) return;
-    // РёСЃРєР»СЋС‡РёРј С„Р°Р№Р»С‹ Р·Р°РєР°РЅС‡РёРІР°СЋС‰РёРµСЃСЏ РЅР° 0w.m3u8 РёР»Рё _audio.m3u8
+    // исключим файлы заканчивающиеся на 0w.m3u8 или _audio.m3u8
     if (/0w\.m3u8(\?|$)|_audio\.m3u8(\?|$)/i.test(url)) return;
     seen.add(url);
 
@@ -561,7 +561,7 @@
     log('M3U8:', url, 'panel-only');
   }
 
-  // ---------- РїРµСЂРµС…РІР°С‚ fetch / XHR ----------
+  // ---------- перехват fetch / XHR ----------
   function patchFetch() {
     if (window._m3u8_fetch_patched) return;
     window._m3u8_fetch_patched = true;
@@ -602,7 +602,7 @@
     };
   }
 
-  // ---------- SPA-РЅР°РІРёРіР°С†РёСЏ / РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ ----------
+  // ---------- SPA-навигация / инициализация ----------
   function onReady(cb) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', cb, { once: true });
@@ -612,7 +612,7 @@
   }
 
   function hookHistory() {
-    // С‡С‚РѕР±С‹ СЃРєСЂРёРїС‚ В«Р¶РёРІВ» РѕСЃС‚Р°РІР°Р»СЃСЏ РїСЂРё РІРЅСѓС‚СЂРёСЃР°Р№С‚РѕРІРѕР№ РЅР°РІРёРіР°С†РёРё
+    // чтобы скрипт «жив» оставался при внутрисайтовой навигации
     const push = history.pushState;
     const replace = history.replaceState;
     function rerun() {
@@ -625,9 +625,9 @@
     window.addEventListener('popstate', rerun);
   }
 
-  // ---------- СЃС‚Р°СЂС‚ ----------
-  // РїР°С‚С‡Рё fetch/XHR СЃС‚Р°РІРёРј СЃСЂР°Р·Сѓ (document-start), С‡С‚РѕР±С‹ РЅРµ РїРѕС‚РµСЂСЏС‚СЊ
-  // Р·Р°РїСЂРѕСЃС‹, РєРѕС‚РѕСЂС‹Рµ Pinterest РґРµР»Р°РµС‚ РґРѕ DOMContentLoaded
+  // ---------- старт ----------
+  // патчи fetch/XHR ставим сразу (document-start), чтобы не потерять
+  // запросы, которые Pinterest делает до DOMContentLoaded
   try {
     patchFetch();
     patchXHR();
@@ -646,4 +646,3 @@
   });
 
 })();
-
