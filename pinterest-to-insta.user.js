@@ -388,6 +388,14 @@
         background: rgba(255,255,255,.08);
         color: rgba(255,255,255,.6); font-weight: 700;
       }
+      td { position: relative; }
+      .m3u8-dur {
+        position: absolute; left: 4px; bottom: 4px;
+        padding: 1px 5px; border-radius: 4px;
+        background: rgba(0,0,0,.75); color: #fff;
+        font-size: 10px; font-weight: 600; line-height: 1.4;
+        pointer-events: none;
+      }
       #m3u8-panel.m3u8-panel-expanded .m3u8-thumb {
         width: 82px;
       }
@@ -427,7 +435,70 @@
     });
   }
 
-  function addToPanel(url, title) {
+  // ---------- детектирование видео по бейджу длительности ----------
+  // у видео-пинов Pinterest на превью есть бейдж «0:10» — используем его
+  // как признак видео и источник длительности для панели
+  const durationsByPin = new Map(); // pinKey -> '0:10'
+  const DURATION_RE = /^(\d{1,2}:\d{2}|\d{1,2}:\d{2}:\d{2})$/;
+
+  function scanDurationBadges(root) {
+    if (!document.body) return;
+    const walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const text = node.textContent.trim();
+      if (!DURATION_RE.test(text)) continue;
+      const el = node.parentElement;
+      const pin = findPinContainer(el);
+      if (!pin) continue;
+      const pinKey = extractPinKey(pin);
+      if (!pinKey) continue;
+      if (durationsByPin.get(pinKey) === text) continue;
+      durationsByPin.set(pinKey, text);
+      applyDurationToRows(pinKey);
+      log('duration detected:', pinKey, text);
+    }
+  }
+
+  function watchDurationBadges() {
+    scanDurationBadges();
+    const mo = new MutationObserver((mutations) => {
+      let shouldScan = false;
+      for (const m of mutations) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType === 1 && !n.closest('#m3u8-panel')) { shouldScan = true; break; }
+        }
+        if (shouldScan) break;
+      }
+      // скан дешёвый только при новых текстовых бейджах; дебаунсим
+      if (shouldScan) {
+        clearTimeout(watchDurationBadges._t);
+        watchDurationBadges._t = setTimeout(() => scanDurationBadges(), 300);
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function applyDurationToRows(pinKey) {
+    const dur = durationsByPin.get(pinKey);
+    if (!dur) return;
+    document.querySelectorAll(`#m3u8-list tr[data-pin="${CSS.escape(pinKey)}"]`).forEach(row => {
+      setRowDuration(row, dur);
+    });
+  }
+
+  function setRowDuration(row, dur) {
+    let badge = row.querySelector('.m3u8-dur');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'm3u8-dur';
+      const tdImg = row.querySelector('td');
+      if (tdImg) tdImg.appendChild(badge);
+    }
+    badge.textContent = dur;
+  }
+
+  function addToPanel(url, title, pinKey) {
     ensurePanel();
     const tbody = document.querySelector('#m3u8-list tbody');
     if (!tbody) return;
@@ -439,6 +510,7 @@
 
     const tr = document.createElement('tr');
     tr.dataset.url = url;
+    if (pinKey) tr.dataset.pin = pinKey;
     const tdImg = document.createElement('td');
     let appended = false;
     const appendRow = (thumbNode) => {
@@ -448,6 +520,9 @@
       tr.appendChild(tdImg);
       tr.appendChild(tdLink);
       tbody.prepend(tr);
+      if (pinKey && durationsByPin.has(pinKey)) {
+        setRowDuration(tr, durationsByPin.get(pinKey));
+      }
     };
     const markAdded = () => {
       tr.classList.add('m3u8-added');
@@ -570,9 +645,10 @@
 
     const hovered = getHoveredElement();
     const pin = findPinContainer(hovered || document.activeElement);
+    const pinKey = extractPinKey(pin);
 
     const title = pin ? (pin.getAttribute('aria-label') || pin.textContent?.trim().slice(0,60)) : '';
-    addToPanel(url, title);
+    addToPanel(url, title, pinKey);
     log('M3U8:', url, 'panel-only');
   }
 
@@ -633,6 +709,7 @@
     function rerun() {
       setTimeout(() => {
         ensurePanel();
+        scanDurationBadges();
       }, 50);
     }
     history.pushState = function () { const r = push.apply(this, arguments); rerun(); return r; };
@@ -654,6 +731,7 @@
     try {
       ensurePanel();
       hookHistory();
+      watchDurationBadges();
       log('M3U8 helper started');
     } catch (e) {
       console.error('[M3U8] init error', e);
