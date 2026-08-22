@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pinterest M3U8 link helper
 // @namespace    https://github.com/Tav25
-// @version      0.7
+// @version      0.75
 // @description  Показывает ссылку на .m3u8 под пином и собирает все найденные .m3u8-URL на странице
 // @match        https://*.pinterest.com/*
 // @match        https://*.pinterest.*/*
