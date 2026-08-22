@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Pinterest Video Downloader (M3U8 helper)",
+  "version": "0.6.0",
+  "description": "Собирает видео (.m3u8/.mp4) на Pinterest: панель с превью, пакетное скачивание.",
+  "permissions": [],
+  "host_permissions": [
+    "https://*.pinterest.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.pinterest.com/*",
+        "https://*.pinterest.*/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
