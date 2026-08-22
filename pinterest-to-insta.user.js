@@ -443,6 +443,24 @@
 
   function scanDurationBadges(root) {
     if (!document.body) return;
+    // быстрый путь: официальный бейдж Pinterest «PinTypeIdentifier» с текстом «0:13»
+    const badges = (root && root.querySelectorAll ? root : document)
+      .querySelectorAll('[data-test-id="PinTypeIdentifier"]');
+    if (badges.length) {
+      badges.forEach(badge => {
+        const text = badge.textContent.trim();
+        if (!DURATION_RE.test(text)) return;
+        const pinEl = badge.closest('[data-test-pin-id]');
+        if (!pinEl) return;
+        const pinKey = `pin:${pinEl.getAttribute('data-test-pin-id')}`;
+        if (durationsByPin.get(pinKey) === text) return;
+        durationsByPin.set(pinKey, text);
+        applyDurationToRows(pinKey);
+        log('duration detected:', pinKey, text);
+      });
+      return;
+    }
+    // запасной путь: поиск любых текстов вида м:сс через TreeWalker
     const walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
@@ -609,6 +627,8 @@
     // попытка найти обёртку пина как можно выше:
     const isPinLike = (node) => {
       if (!node || node.nodeType !== 1) return false;
+      // приоритетные атрибуты Pinterest
+      if (node.matches('[data-test-pin-id], [data-pin-drag-id]')) return true;
       // эвристики: ссылка на /pin/..., роль listitem, явные data-атрибуты, видео/картинка внутри
       if (node.matches('a[href*="/pin/"]')) return true;
       if (node.matches('[role="listitem"]')) return true;
@@ -625,6 +645,9 @@
 
   function extractPinKey(container) {
     if (!container) return null;
+    // приоритет: явный атрибут пина из DOM Pinterest
+    const pinEl = container.closest('[data-test-pin-id]') || container.querySelector('[data-test-pin-id]');
+    if (pinEl) return `pin:${pinEl.getAttribute('data-test-pin-id')}`;
     // пробуем достать собственно id пина из ссылки
     const a = container.closest('a[href*="/pin/"]') || container.querySelector('a[href*="/pin/"]');
     if (a) {
