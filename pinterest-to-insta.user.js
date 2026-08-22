@@ -441,6 +441,26 @@
   const durationsByPin = new Map(); // pinKey -> '0:10'
   const DURATION_RE = /^(\d{1,2}:\d{2}|\d{1,2}:\d{2}:\d{2})$/;
 
+  // зелёная обводка видео-пинов на странице Pinterest
+  function ensureHighlightStyle() {
+    if (document.getElementById('m3u8-highlight-style')) return;
+    const css = document.createElement('style');
+    css.id = 'm3u8-highlight-style';
+    css.textContent = `
+      [data-test-pin-id].m3u8-video-pin {
+        outline: 3px solid #22c55e !important;
+        outline-offset: -3px;
+        border-radius: 16px;
+      }
+    `;
+    document.documentElement.appendChild(css);
+  }
+
+  function markPinAsVideo(pinEl) {
+    ensureHighlightStyle();
+    pinEl.classList.add('m3u8-video-pin');
+  }
+
   function scanDurationBadges(root) {
     if (!document.body) return;
     // быстрый путь: официальный бейдж Pinterest «PinTypeIdentifier» с текстом «0:13»
@@ -455,6 +475,7 @@
         const pinKey = `pin:${pinEl.getAttribute('data-test-pin-id')}`;
         if (durationsByPin.get(pinKey) === text) return;
         durationsByPin.set(pinKey, text);
+        markPinAsVideo(pinEl);
         applyDurationToRows(pinKey);
         log('duration detected:', pinKey, text);
       });
@@ -473,6 +494,7 @@
       if (!pinKey) continue;
       if (durationsByPin.get(pinKey) === text) continue;
       durationsByPin.set(pinKey, text);
+      markPinAsVideo(pin.closest('[data-test-pin-id]') || pin);
       applyDurationToRows(pinKey);
       log('duration detected:', pinKey, text);
     }
