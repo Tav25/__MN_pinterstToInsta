@@ -11,7 +11,20 @@
     {
       "matches": [
         "https://*.pinterest.com/*",
-        "https://*.pinterest.*/*"
+        "https://*.pinterest.ru/*",
+        "https://*.pinterest.de/*",
+        "https://*.pinterest.fr/*",
+        "https://*.pinterest.co.uk/*",
+        "https://*.pinterest.es/*",
+        "https://*.pinterest.it/*",
+        "https://*.pinterest.ca/*",
+        "https://*.pinterest.com.au/*",
+        "https://*.pinterest.com.br/*",
+        "https://*.pinterest.jp/*",
+        "https://*.pinterest.mx/*",
+        "https://*.pinterest.nl/*",
+        "https://*.pinterest.se/*",
+        "https://*.pinterest.pl/*"
       ],
       "js": ["content.js"],
       "run_at": "document_start",
