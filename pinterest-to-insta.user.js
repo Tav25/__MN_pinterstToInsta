@@ -448,8 +448,7 @@
     css.id = 'm3u8-highlight-style';
     css.textContent = `
       [data-test-pin-id].m3u8-video-pin {
-        outline: 3px solid #22c55e !important;
-        outline-offset: -3px;
+        box-shadow: inset 0 0 0 3px #22c55e !important;
         border-radius: 16px;
       }
     `;
