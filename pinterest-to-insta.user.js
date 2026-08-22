@@ -1,16 +1,15 @@
 // ==UserScript==
 // @name         Pinterest M3U8 link helper
 // @namespace    https://your.namespace.example
-// @version      0.4
+// @version      0.5
 // @description  Показывает ссылку на .m3u8 под пином и собирает все найденные .m3u8-URL на странице
-// @match        https://www.pinterest.*/*
-// @match        https://pinterest.com/*
-// @match        https://www.pinterest.com/*
+// @match        https://*.pinterest.com/*
+// @match        https://*.pinterest.*/*
+// @match        https://pinterest.*/*
 // @run-at       document-start
-// @grant        none33
+// @grant        none
 // @updateURL    https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
 // @downloadURL  https://raw.githubusercontent.com/Tav25/__MN_pinterstToInsta/master/pinterest-to-insta.user.js
-
 // ==/UserScript==
 
 (function () {
